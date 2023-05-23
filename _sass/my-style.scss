@@ -12,3 +12,35 @@
     margin: 1rem 0;
   }
 }
+
+.pubitem {
+  margin: 2em 0;
+  line-height: 1em;
+}
+
+.pubtitle {
+  margin-bottom: 0.5em;
+  line-height: 1.2em;
+  font-weight: bold;
+}
+
+.pubauthors,
+.pubinfo {
+  font-size: 95%;
+  margin-bottom: 0.75em;
+}
+.pubteaser {
+  clear: both;
+}
+
+.pubteaser a {
+  float: left;
+  margin-right: 2em;
+}
+
+.pubteaser img {
+  width: 100px;
+}
+.publinks {
+  font-size: 75%;
+}

@@ -6,5 +6,3 @@
 * [MIT](./MIT.md)
 * [W3C-20150513](./W3C-20150513.md)
 
-## Custom
-* [PRO](./PRO.md)

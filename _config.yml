@@ -50,22 +50,23 @@ matt:
 # Add links to the sidebar.
 menu:
   - title:             About
-    url:               /about/
-  - title:             Example
-    url:               /example/
-  - title:             Documentation
-    url:               /docs/
+    url:               /
+    # TODO: Uncomment this when ready
+  - title:             Publications
+    url:               /publications/
+  - title:             Resume
+    url:               /assets/pdf/resume.pdf
 
 
 # Add links to the footer.
 # Typically you'll want to link to your cookie- or privacy policy (if appliable), etc..
-legal:
-  - title:             LICENSE
-    url:               /LICENSE/
-  - title:             NOTICE
-    url:               /NOTICE/
-  - title:             CHANGELOG
-    url:               /CHANGELOG/
+# legal:
+#   - title:             LICENSE
+#     url:               /LICENSE/
+#   - title:             NOTICE
+#     url:               /NOTICE/
+#   - title:             CHANGELOG
+#     url:               /CHANGELOG/
 
 # This text will appear in a `<small>` tag in the footer of every page.
 copyright:             © 2023 Matt Taylor. All rights reserved.
@@ -194,7 +195,7 @@ hydejack:
   project_addons:      [about, newsletter, other, comments]
 
   # Set to `true` if you don't want to show an icon indicating external links
-  no_mark_external:    false
+  no_mark_external:    true
 
   # Set to `true` if third party plugins fail to work with dynamically loaded pages
   no_push_state:       false
@@ -303,6 +304,14 @@ collections:
     permalink:         /projects/:path/
     output:            true
 
+  publications:
+    permalink:        /:collection/:name/
+    # write a rendered page for each document in the collection
+    output:           true
+
+  work_experience:
+    permalink: /:name/
+    output: false
 
 # File inclusion/exclusion
 # ----------------------------------------------------------------------------------------
@@ -404,21 +413,21 @@ jekyll_compose:
         A short ~160 character description of your post for search engines,
         social media previews, etc.
       image:
-        path: /assets/img/sidebar-bg.jpg
+        path: /assets/img/mountain_sky.jpg
     posts:
       layout: post
       description: > 
         A short ~160 character description of your post for search engines,
         social media previews, etc.
       image:
-        path: /assets/img/sidebar-bg.jpg
+        path: /assets/img/mountain_sky.jpg
     projects:
       layout: project
       description: > 
         A short ~160 character description of your post for search engines,
         social media previews, etc.
       image:
-        path: /assets/img/sidebar-bg.jpg
+        path: /assets/img/mountain_sky.jpg
       links:
         - title: Project Link
           url: https://example.com

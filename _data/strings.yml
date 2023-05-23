@@ -94,7 +94,6 @@ date_formats:
   projects_group_by:   '%Y'
   resume:              '%b %Y'
 
-
 # PRO Version
 # ---------------------------------------------------------------------------------------
 # If you don't own the PRO version of Hydejack, modifying these will have no effect.

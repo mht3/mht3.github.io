@@ -1,0 +1,29 @@
+---
+layout: about
+title: Publications
+
+---
+
+Currently, I have no publications. Publications will be in this format and will be available soon!
+
+{% assign publications = site.publications | sort: "year" | reverse %}
+{% for pub in publications %}
+<div class="pubitem">
+    <div class="pubteaser">
+        <a href="{{pub.url}}">
+            <img
+            src="/assets/img/publications/{{ pub.slug }}_small.png"
+            alt="{{pub.slug}} publication teaser"
+            />
+        </a>
+    </div>
+  <div class="pubtitle">{{ pub.title }}</div>
+  <div class="pubauthors">{{ pub.authors }}</div>
+  <div class="pubinfo">{{ pub.publication }}, {{ pub.year}}</div>
+  <div class="publinks">
+        <a href="/download/{{ pub.slug}}.pdf"><i class="far fa-file-pdf"></i> PDF</a
+        >&nbsp;&nbsp;
+        <a href="{{pub.url}}"><i class="fas fa-link"></i> Project Page</a>
+    </div>
+</div>
+{% endfor %}

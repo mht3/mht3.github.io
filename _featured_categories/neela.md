@@ -1,24 +1,23 @@
 ---
 layout: about
-title: About
 description: >
   About Matt Taylor.
 hide_description: true
-no_link_title: false 
-no_excerpt: false 
-hide_image: false
-cover: true
+redirect_from:
+  - /download/
 ---
+
+# About
 
 <!--author-->
 
-<h2 id="work-experience">Work Experience</h2>
+## Work Experience 
 
 {% assign work = site.work_experience | sort: "year" | reverse %}
 {% for job in work %}
 <div class="pubitem">
     <div class="pubteaser">
-        <a href="{{job.company_website}}">
+        <a href="{{job.url}}">
             <img
             src="/assets/img/work/{{ job.slug }}.png"
             alt="{{job.slug}} logo"
@@ -31,4 +30,6 @@ cover: true
   <div class="pubinfo">Mentor: <a href="{{job.mentor_webpage}}" target="_blank" style="text-decoration: underline;">{{ job.mentor }}</a></div>
 </div>
 {% endfor %}
+
+
 
