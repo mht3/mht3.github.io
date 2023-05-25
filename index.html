@@ -17,7 +17,7 @@ cover: true
 {% assign work = site.work_experience | sort: "year" | reverse %}
 {% for job in work %}
 <div class="pubitem">
-    <div class="pubteaser">
+    <div class="worklogo">
         <a href="{{job.company_website}}">
             <img
             src="/assets/img/work/{{ job.slug }}.png"
@@ -27,7 +27,6 @@ cover: true
     </div>
   <div class="pubtitle">{{ job.title }}</div>
   <div class="pubauthors">{{ job.job_date }}</div>
-  <br>
   <div class="pubinfo">Mentor: <a href="{{job.mentor_webpage}}" target="_blank" style="text-decoration: underline;">{{ job.mentor }}</a></div>
 </div>
 {% endfor %}
