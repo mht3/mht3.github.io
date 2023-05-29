@@ -51,9 +51,11 @@ matt:
 menu:
   - title:             About
     url:               /
+  - title:             Projects
+    url:               /projects/
     # TODO: Uncomment this when ready
-  - title:             Publications
-    url:               /publications/
+  # - title:             Publications
+  #   url:               /publications/
   - title:             Resume
     url:               /assets/pdf/resume.pdf
 
@@ -312,6 +314,10 @@ collections:
   work_experience:
     permalink: /:name/
     output: false
+
+  projects:
+    permalink: /:name/
+    output: true
 
 # File inclusion/exclusion
 # ----------------------------------------------------------------------------------------

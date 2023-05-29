@@ -1,0 +1,45 @@
+---
+layout: about
+title: Projects
+---
+
+{% assign projects = site.projects | sort: "year" | reverse %}
+{% for project in projects %}
+<div class="pubitem">
+    <div class="pubteaser">
+        <a href="{{project.github}}">
+            <img
+            src="/assets/img/projects/{{ project.slug }}.gif"
+            alt="{{project.slug}} Teaser"
+            />
+        </a>
+    </div>
+  <div class="pubtitle">{{ project.title }}</div>
+  <div class="pubauthors">Advised by <a href="{{project.advisor_webpage}}" target="_blank" style="text-decoration: underline;">{{ project.advisor }}</a>, {{ project.year_accomplished}}</div>
+  <div class="pubinfo">Skills: {{ project.skills }} </div>
+  <div class="publinks">
+        <a href="{{project.github}}"><i class="fas fa-link"></i> Project Page</a>
+    </div>
+</div>
+{% endfor %}
+
+<!-- NFL KAGGLE PROJECT -->
+<div class="pubitem">
+  <div class="pubteaser">
+      <a href="https://github.com/mht3/BigDataBowl2022">
+          <img
+          src="/assets/img/projects/nfl_kaggle.gif"
+          alt="NFL Kaggle Teaser"
+          />
+      </a>
+  </div>
+<div class="pubtitle">Evaluating Kicker Performance Using KER</div>
+<div class="pubauthors">Matt Taylor, Dev Patel, Anand Ramaka, Yanzhen Shen</a></div>
+<div class="pubinfo">Kaggle Competition - NFL Big Data Bowl 2022 </div>
+<div class="publinks">
+      <a href="https://www.kaggle.com/code/mattt31/evaluating-kicker-performance-using-ker/notebook"><i class="fas fa-link"></i> Paper</a>
+      &nbsp;&nbsp;
+      <a href="https://github.com/mht3/BigDataBowl2022"><i class="fas fa-link"></i> Code</a>
+
+  </div>
+</div>

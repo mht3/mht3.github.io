@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: about
 title: A New Method for Fancy Research
 authors: John Doe and Mary Jane
 publication: Journal of Fancy Research

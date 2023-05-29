@@ -8,10 +8,10 @@ matt:
   # Used at the bottom of each page and at the top of the `about` layout
   # Markdown enabled, can use multiple paragraphs (enabled by `|`)
   about:             |
-    I am a first year MS student in CSE at the University of California, 
-    San Diego working with [Hao Su](http://ai.ucsd.edu/~haosu/). I received 
+    I am a first year MS student in the CSE department at the University of California, 
+    San Diego working with [Prof. Hao Su](http://ai.ucsd.edu/~haosu/). I received 
     my undergraduate degree in Aerospace Engineering at the University of Illinois
-    Urbana-Champaign researching under [Huy Tran](https://huytrtran.github.io/).
+    Urbana-Champaign researching under [Prof. Huy Tran](https://huytrtran.github.io/).
 
     I hope to explore how AI systems can generalize human-like tasks and am
     interested in computer vision, reinforcement learning, robotics, and deep learning.
