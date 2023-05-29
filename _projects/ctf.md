@@ -7,4 +7,5 @@ advisor_webpage: https://huytrtran.github.io/
 year: 2023
 year_accomplished: 2022-2023
 github: https://github.com/mht3/simulation-to-gridworld-ros2/
+slides: gazebo_ros
 ---
