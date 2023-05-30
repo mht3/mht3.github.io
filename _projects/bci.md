@@ -1,7 +1,7 @@
 ---
 layout: about
 title: Improving Human-Agent Teaming with a BCI 
-skills: Sklearn, Python, FFT Analysis
+skills: Sklearn, Python
 advisor: Huy Tran
 advisor_webpage: https://huytrtran.github.io/
 year: 2021
