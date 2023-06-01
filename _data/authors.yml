@@ -7,9 +7,13 @@ matt:
 
   # Used at the bottom of each page and at the top of the `about` layout
   # Markdown enabled, can use multiple paragraphs (enabled by `|`)
+    #   I am a first year MS student in the CSE department at the University of California, 
+    # San Diego working with [Dr. Hao Su](http://ai.ucsd.edu/~haosu/). I received 
+    # my undergraduate degree in Aerospace Engineering at the University of Illinois
+    # Urbana-Champaign researching under [Dr. Huy Tran](https://huytrtran.github.io/).
   about:             |
-    I am a first year MS student in the CSE department at the University of California, 
-    San Diego working with [Dr. Hao Su](http://ai.ucsd.edu/~haosu/). I received 
+    I am an incoming MS student in the CSE department at the University of California, 
+    San Diego and will be working with [Dr. Hao Su](http://ai.ucsd.edu/~haosu/). I received 
     my undergraduate degree in Aerospace Engineering at the University of Illinois
     Urbana-Champaign researching under [Dr. Huy Tran](https://huytrtran.github.io/).
 
