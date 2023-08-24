@@ -32,7 +32,7 @@ description:           >
 tagline:               MS Student at UC San Diego
 
 # A list of keywords for your blog
-keywords:              []
+keywords:              [Matt Taylor]
 
 # A (square) logo for your site.
 # If provided, it will be shown at the top of the sidebar.
@@ -312,6 +312,10 @@ collections:
     output:           true
 
   work_experience:
+    permalink: /:name/
+    output: false
+
+  education:
     permalink: /:name/
     output: false
 
