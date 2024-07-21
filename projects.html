@@ -3,6 +3,28 @@ layout: about
 title: Projects
 ---
 
+<!-- Approximate Lyapunov Control Project -->
+<div class="pubitem">
+    <div class="pubteaser">
+        <a href="https://github.com/mht3/approximate_neural_lyapunov_control">
+            <img
+            src="/assets/img/projects/inverted_pendulum.gif"
+            alt="Final Report Teaser"
+            />
+        </a>
+    </div>
+  <div class="pubtitle">Approximate Neural Lyapunov Control</div>
+  <div class="pubauthors">ECE 228: ML for Physical Applications</a></div>
+  <div class="pubinfo">Skills: PyTorch, Python </div>
+  <div class="publinks">
+        <a href="/assets/pdf/approximate_lyapunov_control.pdf"><i class="far fa-file-pdf"></i> Paper</a
+        &nbsp;&nbsp;
+        <a href="https://github.com/mht3/approximate_neural_lyapunov_control"><i class="fas fa-link"></i> Code</a>
+  
+    </div>
+  </div>
+  
+
 {% assign projects = site.projects | sort: "year" | reverse %}
 {% for project in projects %}
 <div class="pubitem">
@@ -18,7 +40,7 @@ title: Projects
   <div class="pubauthors">Advised by <a href="{{project.advisor_webpage}}" target="_blank" style="text-decoration: underline;">{{ project.advisor }}</a>, {{ project.year_accomplished}}</div>
   <div class="pubinfo">Skills: {{ project.skills }} </div>
   <div class="publinks">
-        <a href="/assets/pdf/{{ project.slides}}.pdf"><i class="far fa-file-pdf"></i> Presentation</a
+        <a href="/assets/pdf/{{project.slides}}.pdf"><i class="far fa-file-pdf"></i> Presentation</a
         >&nbsp;&nbsp;
         <a href="{{project.github}}"><i class="fas fa-link"></i> Project Page</a>
     </div>
