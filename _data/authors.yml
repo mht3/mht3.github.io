@@ -16,10 +16,10 @@ matt:
     
   about:             |
     Hi! I'm a second year MS student in the computer science and engineering department at UC 
-    San Diego, advised by Professor [Sicun Gao](https://scungao.github.io/). My current research is on better control for nuclear fusion using certifiable neural networks. I received my undergraduate degree in aerospace engineering with a minor in computer science at the University of Illinois
+    San Diego, advised by Professor [Sicun Gao](https://scungao.github.io/). My current research is on better control for nuclear fusion using learnable and certifiable controllers. I received my undergraduate degree in aerospace engineering with a minor in computer science at the University of Illinois
     Urbana-Champaign researching under Professor [Huy Tran](https://huytrtran.github.io/).
 
-    I have a broad interest in science-related applications of deep reinforcement learning and computer vision and hope to explore how AI systems can push boundaries to discover efficient solutions to real-world problems :)
+    My research interests are broadly in physical and science-related applications of deep learning and reinforcement learning. I hope to explore how AI systems can push boundaries to discover efficient solutions to real-world problems :)
 
   # This photo will be used in the about section
   # picture:
