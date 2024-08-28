@@ -35,7 +35,7 @@ cover: true
     </div>
   <div class="pubtitle">{{ job.title }}</div>
   <div class="pubauthors">{{ job.job_date }}</div>
-  <div class="pubinfo">Mentor: <a href="{{job.mentor_webpage}}" target="_blank" style="text-decoration: underline;">{{ job.mentor }}</a></div>
+  <div class="pubinfo">Mentor: {{ job.mentor }}</div>
 </div>
 {% endfor %}
 
