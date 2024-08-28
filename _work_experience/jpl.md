@@ -3,6 +3,6 @@ layout: default
 title: Machine Learning Research Intern, NASA Jet Propulsion Laboratory
 mentor: Kai Pak
 company_website: https://www.jpl.nasa.gov/
-job_date: June 2024 - August 2024
+job_date: June 2024 - Present
 year: 2024
 ---
