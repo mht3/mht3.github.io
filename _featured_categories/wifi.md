@@ -10,4 +10,4 @@ redirect_from:
 
 Scan the QR code to connect.
 
-<img title="easter egg" alt="Easter Egg" src="/assets/img/blog/wifi.JPG">
+<img title="WiFi" alt="WiFi" src="/assets/img/blog/wifi.JPG">
