@@ -9,11 +9,12 @@ matt:
   # Markdown enabled, can use multiple paragraphs (enabled by `|`)
     
   about:             |
-    Hi! I'm a second year MS student in the computer science and engineering department at UC 
-    San Diego, advised by Professor [Sicun Gao](https://scungao.github.io/). My current research is on better control for nuclear fusion using learnable and certifiable controllers. I received my undergraduate degree in aerospace engineering with a minor in computer science at the University of Illinois
+    Hi! I am a second year MS student in the computer science and engineering department at UC San Diego, advised by Professor [Sean Gao](https://scungao.github.io/).
+    I am interested in applying deep learning and reinforcement learning to science and physical applications, especially for clean energy and climate solutions. I want to explore how AI can help with scientific discovery.
+
+    My current research focuses on incorporating certificates of stability into learning-based methods for plasma control in nuclear fusion. Previously, I studied aerospace engineering with a minor in computer science at the University of Illinois
     Urbana-Champaign researching under Professor [Huy Tran](https://huytrtran.github.io/).
 
-    My research interests are broadly in physical and science-related applications of deep learning and reinforcement learning. I hope to explore how AI systems can push boundaries to discover efficient solutions to real-world problems :)
 
   # This photo will be used in the about section
   # picture:
