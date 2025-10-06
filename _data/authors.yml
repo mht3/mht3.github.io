@@ -8,8 +8,8 @@ matt:
   # Used at the bottom of each page and at the top of the `about` layout
   # Markdown enabled, can use multiple paragraphs (enabled by `|`)
     
-  about:             |
-    Hi! I'm an incoming PhD student in the computer science and engineering department at UC San Diego, advised by Professor [Sean Gao](https://scungao.github.io/). Previously, I studied aerospace engineering with a minor in computer science at the University of Illinois
+  about:
+    Hi! I'm a first year PhD student in the computer science and engineering department at UC San Diego, advised by Professor [Sean Gao](https://scungao.github.io/). Previously, I studied aerospace engineering with a minor in computer science at the University of Illinois
     Urbana-Champaign researching under Professor [Huy Tran](https://huytrtran.github.io/).
     
     I have a broad interest in science and physical applications of sequential decision making problems and am particularly interested in exploring how AI can accelerate scientific discovery.
@@ -32,7 +32,7 @@ matt:
     github:          mht3
     # rss:             https://<url>/feed.xml
     # facebook:        <username>
-    # google:          <number>
+    google:          9e2G0_0AAAAJ&hl=en
     # vk:              <username>
     # youtube:         <string_string_string>
     # vimeo:           <username>
