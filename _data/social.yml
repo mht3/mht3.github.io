@@ -13,6 +13,10 @@ google-plus:
   name: Google+
   icon: icon-google-plus
   prepend: 'https://plus.google.com/'
+google-scholar:
+  name: Google Scholar
+  icon: icon-library
+  prepend: 'https://scholar.google.com/citations?user='
 google-drive:
   name: Google Drive
   icon: icon-google-drive
