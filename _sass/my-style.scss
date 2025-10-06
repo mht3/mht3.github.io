@@ -59,3 +59,17 @@
   font-size: 75%;
 }
 
+/* Custom Google Scholar icon - using SVG as background to match theme's icon font approach */
+.icon-google-scholar:before {
+  content: "";
+  font-family: inherit;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-image: url('/assets/icons/icon-google-scholar.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  vertical-align: middle;
+}
+
