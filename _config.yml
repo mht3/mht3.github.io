@@ -51,10 +51,10 @@ matt:
 menu:
   - title:             About
     url:               /
-  - title:             Projects
-    url:               /projects/
   - title:             Publications
     url:               /publications/
+  - title:             Projects
+    url:               /projects/
   - title:             Resume
     url:               /assets/pdf/resume.pdf
 
