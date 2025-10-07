@@ -9,7 +9,7 @@ title: Publications
     <div class="pubteaser">
         <a href="{{pub.url}}">
             <img
-            src="/assets/img/publications/{{ pub.slug }}_small.png"
+            src="/assets/img/publications/{{ pub.slug }}.png"
             alt="{{pub.slug}} publication teaser"
             />
         </a>
@@ -18,9 +18,7 @@ title: Publications
   <div class="pubauthors">{{ pub.authors }}</div>
   <div class="pubinfo">{{ pub.publication }}, {{ pub.year}}</div>
   <div class="publinks">
-        <a href="/download/{{ pub.slug}}.pdf"><i class="far fa-file-pdf"></i> PDF</a
-        >&nbsp;&nbsp;
-        <a href="{{pub.url}}"><i class="fas fa-link"></i> Project Page</a>
+        <a href="{{pub.url}}"><i class="fas fa-link"></i> Publication Page</a>
     </div>
 </div>
 {% endfor %}
