@@ -156,3 +156,30 @@
   margin-right: 0.3em;
 }
 
+/* Collapsible details styling */
+details summary {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.5em 0;
+  border-radius: 4px;
+}
+
+details summary:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateX(5px);
+}
+
+details summary h2 {
+  margin: 0;
+  transition: color 0.2s ease;
+}
+
+details summary:hover h2 {
+  color: #007bff;
+}
+
+details[open] summary {
+  border-bottom: 1px solid #eee;
+  margin-bottom: 1em;
+}
+
