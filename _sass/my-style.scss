@@ -91,7 +91,7 @@
 }
 
 .publication-teaser img {
-  width: 120px;
+  width: 150px;
   height: auto;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -110,10 +110,8 @@
 
 .publication-title {
   margin-bottom: 0.5em;
-  line-height: 1.3em;
-  font-weight: 600;
-  font-size: 1.1em;
-  color: #2c3e50;
+  line-height: 1.2em;
+  font-weight: bold;
 }
 
 .publication-title a {
@@ -125,24 +123,15 @@
   text-decoration: underline;
 }
 
-.publication-authors {
-  font-size: 95%;
-  margin-bottom: 0.4em;
-  color: #34495e;
-  font-style: italic;
-}
-
+.publication-authors,
 .publication-venue {
-  font-size: 90%;
-  margin-bottom: 0.6em;
-  color: #7f8c8d;
-  font-weight: 500;
+  font-size: 95%;
+  margin-bottom: 0.75em;
 }
 
 .publication-description {
   font-size: 90%;
   margin-bottom: 0.8em;
-  color: #555;
   line-height: 1.4em;
 }
 
