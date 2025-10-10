@@ -5,6 +5,6 @@
   image: "/assets/img/publications/ms_thesis.png"
   links:
     paper: "https://escholarship.org/uc/item/5sx2v9wg"
-    code: "https://github.com/mht3/advantage-regularization-imitation"
-    arxiv: "https://arxiv.org/abs/example"
-    bibtex: "https://example.com/bibtex"
+    # code: "https://github.com/mht3/advantage-regularization-imitation"
+    # arxiv: "https://arxiv.org/abs/example"
+    # bibtex: "https://example.com/bibtex"
