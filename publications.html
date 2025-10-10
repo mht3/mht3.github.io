@@ -3,22 +3,42 @@ layout: about
 title: Publications
 ---
 
-{% assign publications = site.publications | sort: "year" | reverse %}
+## Selected Publications
+
+See [Google Scholar](https://scholar.google.com/citations?user=YOUR_SCHOLAR_ID) for a more up to date list of publications.
+
+{% assign publications = site.data.publications | sort: "year" | reverse %}
 {% for pub in publications %}
-<div class="pubitem">
-    <div class="pubteaser">
-        <a href="{{pub.url}}">
+<div class="publication-item">
+    <div class="publication-teaser">
+        <a href="{{pub.links.paper}}">
             <img
-            src="/assets/img/publications/{{ pub.slug }}.png"
-            alt="{{pub.slug}} publication teaser"
+            src="{{pub.image}}"
+            alt="{{pub.title}} publication teaser"
             />
         </a>
     </div>
-  <div class="pubtitle">{{ pub.title }}</div>
-  <div class="pubauthors">{{ pub.authors }}</div>
-  <div class="pubinfo">{{ pub.publication }}, {{ pub.year}}</div>
-  <div class="publinks">
-        <a href="{{pub.url}}"><i class="fas fa-link"></i> Publication Page</a>
+    <div class="publication-content">
+        <div class="publication-title">{{ pub.title }}</div>
+        <div class="publication-authors">{{ pub.authors }}</div>
+        <div class="publication-venue">{{ pub.venue }}, {{ pub.year }}</div>
+        {% if pub.description %}
+        <div class="publication-description">{{ pub.description }}</div>
+        {% endif %}
+        <div class="publication-links">
+            {% if pub.links.paper %}
+            <a href="{{pub.links.paper}}"><i class="fas fa-file-pdf"></i> Paper</a>
+            {% endif %}
+            {% if pub.links.code %}
+            <a href="{{pub.links.code}}"><i class="fab fa-github"></i> Code</a>
+            {% endif %}
+            {% if pub.links.arxiv %}
+            <a href="{{pub.links.arxiv}}"><i class="fas fa-external-link-alt"></i> arXiv</a>
+            {% endif %}
+            {% if pub.links.bibtex %}
+            <a href="{{pub.links.bibtex}}"><i class="fas fa-quote-left"></i> BibTeX</a>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endfor %}

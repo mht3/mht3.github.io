@@ -1,0 +1,10 @@
+- title: "Advantage Regularization for Imitating Complex Control Policies"
+  authors: "Matthew Taylor"
+  venue: "MS Thesis in Computer Science, UC San Diego"
+  year: 2025
+  image: "/assets/img/publications/ms_thesis.png"
+  links:
+    paper: "https://escholarship.org/uc/item/5sx2v9wg"
+    code: "https://github.com/mht3/advantage-regularization-imitation"
+    arxiv: "https://arxiv.org/abs/example"
+    bibtex: "https://example.com/bibtex"
