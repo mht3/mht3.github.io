@@ -183,3 +183,29 @@ details[open] summary {
   margin-bottom: 1em;
 }
 
+/* Mobile responsive styles for publications */
+@media (max-width: 768px) {
+  .publication-item {
+    flex-direction: column;
+    gap: 1em;
+    text-align: center;
+  }
+  
+  .publication-teaser {
+    align-self: center;
+  }
+  
+  .publication-teaser img {
+    width: 150px;
+  }
+  
+  .publication-content {
+    text-align: left;
+  }
+  
+  .publication-links {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
