@@ -51,10 +51,8 @@ matt:
 menu:
   - title:             About
     url:               /
-  - title:             Publications
-    url:               /publications/
-  - title:             Projects
-    url:               /projects/
+  - title:             Research
+    url:               /research/
   - title:             Resume
     url:               /assets/pdf/resume.pdf
 
@@ -70,7 +68,7 @@ menu:
 #     url:               /CHANGELOG/
 
 # This text will appear in a `<small>` tag in the footer of every page.
-copyright:             © 2024 Matt Taylor. All rights reserved.
+copyright:             © 2025 Matt Taylor. All rights reserved.
 
 # Format of the permalinks
 permalink:             /:categories/:year-:month-:day-:title/
