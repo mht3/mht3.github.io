@@ -27,17 +27,21 @@ export function setupGUI(parentContext) {
   // Add scene selection dropdown.
   let reload = reloadFunc.bind(parentContext);
   parentContext.gui.add(parentContext.params, 'scene', {
-    "Go2": "unitree_go2/scene.xml",
-    "G1": "unitree_g1/scene_23dof.xml",
-  }).name('Example Scene').onChange(reload);
+    "Unitree G1": "unitree_g1/scene_23dof.xml",
+  }).name('Robot Scene').onChange(reload);
 
-  // Add policy selection dropdown (robust only)
+  // Add policy selection dropdown for G1 models
   const policyOptions = {
-    "Robust": "./examples/checkpoints/robust.json"
+    "Ours": "./examples/checkpoints/g1/balance_deploy_state_projection.yaml",
+    "Baseline": "./examples/checkpoints/g1/balance_deploy_baseline.yaml",
   };
 
-  // Remove policy selector; force robust
-  parentContext.params.policy = policyOptions["Robust"]; // default robust
+  // Add policy selector
+  parentContext.gui.add(parentContext.params, 'policy', policyOptions)
+    .name('Policy Model')
+    .onChange(async (value) => {
+      await parentContext.loadPolicy(value);
+    });
 
   // Fix robust behavior: zero command velocity and fixed kp
   parentContext.params.command_vel_x = 0.0;
@@ -190,8 +194,14 @@ export function setupGUI(parentContext) {
   //  When pressed, resets the simulation to the initial state.
   //  Can also be triggered by pressing backspace.
   const resetSimulation = () => {
-    parentContext.simulation.resetData();
-    parentContext.simulation.forward();
+    // Use the demo's resetSimulation method if available (properly resets policy state)
+    if (typeof parentContext.resetSimulation === 'function') {
+      parentContext.resetSimulation();
+    } else {
+      // Fallback to basic reset
+      parentContext.simulation.resetData();
+      parentContext.simulation.forward();
+    }
   };
   simulationFolder.add({reset: () => { resetSimulation(); }}, 'reset').name('Reset');
   document.addEventListener('keydown', (event) => {
@@ -199,61 +209,66 @@ export function setupGUI(parentContext) {
   actionInnerHTML += 'Reset simulation<br>';
   keyInnerHTML += 'Backspace<br>';
 
-  // Add keyframe slider.
-  let nkeys = parentContext.model.nkey;
-  let keyframeGUI = simulationFolder.add(parentContext.params, "keyframeNumber", 0, nkeys - 1, 1).name('Load Keyframe').listen();
-  keyframeGUI.onChange((value) => {
-    if (value < parentContext.model.nkey) {
-      parentContext.simulation.qpos.set(parentContext.model.key_qpos.slice(
-        value * parentContext.model.nq, (value + 1) * parentContext.model.nq)); }});
-  parentContext.updateGUICallbacks.push((model, simulation, params) => {
-    let nkeys = parentContext.model.nkey;
-    console.log("new model loaded. has " + nkeys + " keyframes.");
-    if (nkeys > 0) {
-      keyframeGUI.max(nkeys - 1);
-      keyframeGUI.domElement.style.opacity = 1.0;
-    } else {
-      // Disable keyframe slider if no keyframes are available.
-      keyframeGUI.max(0);
-      keyframeGUI.domElement.style.opacity = 0.5;
-    }
-  });
-
-  // Add sliders for ctrlnoiserate and ctrlnoisestd; min = 0, max = 2, step = 0.01.
-  simulationFolder.add(parentContext.params, 'ctrlnoiserate', 0.0, 2.0, 0.01).name('Noise rate' );
-  simulationFolder.add(parentContext.params, 'ctrlnoisestd' , 0.0, 2.0, 0.01).name('Noise scale');
-
   let textDecoder = new TextDecoder("utf-8");
   let nullChar    = textDecoder.decode(new ArrayBuffer(1));
 
-  // Add actuator sliders.
-  let actuatorFolder = simulationFolder.addFolder("Actuators");
-  const addActuators = (model, simulation, params) => {
-    let act_range = model.actuator_ctrlrange;
-    let actuatorGUIs = [];
-    for (let i = 0; i < model.nu; i++) {
-      if (!model.actuator_ctrllimited[i]) { continue; }
+  // Add joint position displays (read-only, shows actual joint angles)
+  // Only show the 23 actuated joints from the policy
+  let jointFolder = simulationFolder.addFolder("Joint Positions");
+  const addJointPositions = (model, simulation, params) => {
+    let jointGUIs = [];
+    
+    // List of non-actuated joints to exclude (6 joints)
+    const excludedJoints = [
+      "left_wrist_pitch_joint",
+      "left_wrist_yaw_joint", 
+      "right_wrist_pitch_joint",
+      "right_wrist_yaw_joint",
+      "waist_roll_joint",
+      "waist_pitch_joint"
+    ];
+    
+    for (let i = 0; i < model.njnt; i++) {
       let name = textDecoder.decode(
-        parentContext.model.names.subarray(
-          parentContext.model.name_actuatoradr[i])).split(nullChar)[0];
-
-      parentContext.params[name] = 0.0;
-      let actuatorGUI = actuatorFolder.add(parentContext.params, name, act_range[2 * i], act_range[2 * i + 1], 0.01).name(name).listen();
-      actuatorGUIs.push(actuatorGUI);
-      actuatorGUI.onChange((value) => {
-        simulation.ctrl[i] = value;
-      });
+        model.names.subarray(model.name_jntadr[i])).split(nullChar)[0];
+      
+      // Skip the floating base joint and non-actuated joints
+      if (name === "floating_base_joint" || excludedJoints.includes(name)) {
+        continue;
+      }
+      
+      let qpos_adr = model.jnt_qposadr[i];
+      let joint_range = model.jnt_range;
+      let has_limits = model.jnt_limited[i];
+      
+      // Create a params entry for this joint position
+      let paramName = name + "_pos";
+      parentContext.params[paramName] = simulation.qpos[qpos_adr];
+      
+      // Add GUI controller - make it listen to updates
+      let min_val = has_limits ? joint_range[2 * i] : -Math.PI;
+      let max_val = has_limits ? joint_range[2 * i + 1] : Math.PI;
+      let jointGUI = jointFolder.add(parentContext.params, paramName, min_val, max_val).name(name).listen().disable();
+      jointGUIs.push({ gui: jointGUI, qpos_adr: qpos_adr, paramName: paramName });
     }
-    return actuatorGUIs;
+    return jointGUIs;
   };
-  let actuatorGUIs = addActuators(parentContext.model, parentContext.simulation, parentContext.params);
-  parentContext.updateGUICallbacks.push((model, simulation, params) => {
-    for (let i = 0; i < actuatorGUIs.length; i++) {
-      actuatorGUIs[i].destroy();
+  let jointGUIs = addJointPositions(parentContext.model, parentContext.simulation, parentContext.params);
+  
+  // Update joint positions in the render loop
+  parentContext.updateJointPositions = () => {
+    for (let jointInfo of jointGUIs) {
+      parentContext.params[jointInfo.paramName] = parentContext.simulation.qpos[jointInfo.qpos_adr];
     }
-    actuatorGUIs = addActuators(model, simulation, parentContext.params);
+  };
+  
+  parentContext.updateGUICallbacks.push((model, simulation, params) => {
+    for (let jointInfo of jointGUIs) {
+      jointInfo.gui.destroy();
+    }
+    jointGUIs = addJointPositions(model, simulation, parentContext.params);
   });
-  actuatorFolder.close();
+  jointFolder.close();
 
   // Add function that resets the camera to the default position.
   // Can be triggered by pressing ctrl + A.
@@ -314,11 +329,24 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
     parent.jointNamesMJC.push(textDecoder.decode(name_buffer));
   }
 
+  // Parse actuator names (needed for control)
+  parent.actuatorNamesMJC = [];
+  for (let a = 0; a < model.nu; a++) {
+    let start_idx = model.name_actuatoradr[a];
+    let end_idx = start_idx;
+    while (end_idx < names_array.length && names_array[end_idx] !== 0) {
+      end_idx++;
+    }
+    let name_buffer = names_array.subarray(start_idx, end_idx);
+    const actuator_name = textDecoder.decode(name_buffer);
+    parent.actuatorNamesMJC.push(actuator_name);
+  }
+
   let asset_meta = null;
   try {
-    const metaPathGuess = parent.params && parent.params.scene && parent.params.scene.includes('unitree_go2')
-      ? './examples/checkpoints/go2/asset_meta.json'
-      : './examples/checkpoints/go2/asset_meta.json';
+    const metaPathGuess = parent.params && parent.params.scene && parent.params.scene.includes('unitree_g1')
+      ? './examples/checkpoints/g1/asset_meta.json'
+      : './examples/checkpoints/g1/asset_meta.json';
     asset_meta = await fetch(metaPathGuess).then(r => r.json());
   } catch (e) {
     console.warn('asset_meta.json not found; using actuator order', e);
@@ -378,11 +406,6 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
     let material = new THREE.MeshPhysicalMaterial();
     material.color = new THREE.Color(1, 1, 1);
 
-    // Debug material and texture info
-    console.log(`Total materials: ${model.nmat}, Total textures: ${model.ntex}`);
-    for (let m = 0; m < model.nmat; m++) {
-      console.log(`Material ${m}: texId=${model.mat_texid[m]}`);
-    }
     
     // Loop through the MuJoCo geoms and recreate them in three.js.
     for (let g = 0; g < model.ngeom; g++) {
@@ -402,7 +425,6 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
         while (nameEnd < names_array.length && names_array[nameEnd] !== 0) nameEnd++;
         geomName = new TextDecoder("utf-8").decode(names_array.subarray(nameStart, nameEnd));
       }
-      console.log(`Processing geom ${g} (${geomName}): bodyId=${b}, type=${type}, matId=${model.geom_matid[g]}`);
       let size = [
         model.geom_size[(g*3) + 0],
         model.geom_size[(g*3) + 1],
@@ -424,7 +446,7 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
         bodies[b].bodyID = b;
 
         // Mark pelvis/base id for impulse application (match facet)
-        if (bodies[b].name === 'base') {
+        if (bodies[b].name === 'base' || bodies[b].name === 'pelvis') {
           parent.pelvis_body_id = b;
         }
         bodies[b].has_custom_mesh = false;
@@ -500,7 +522,6 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
         model.geom_rgba[(g * 4) + 3]];
       if (model.geom_matid[g] != -1) {
         let matId = model.geom_matid[g];
-        console.log("GEOM TO MAT ID MAPPING", g, model.geom_matid[g]);
         color = [
           model.mat_rgba[(matId * 4) + 0],
           model.mat_rgba[(matId * 4) + 1],
@@ -509,16 +530,13 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
 
         // Construct Texture from model.tex_data
         texture = undefined;
-        console.log("MAT TO TEX ID MAPPING", matId, model.mat_texid[matId]);
         let texId = model.mat_texid[matId];
-        console.log(`Geom ${g}: matId=${matId}, texId=${texId}, type=${type}`);
         if (texId != -1) {
           let width    = model.tex_width [texId];
           let height   = model.tex_height[texId];
           let offset   = model.tex_adr   [texId];
           let channels = model.tex_nchannel[texId];
           let texData  = model.tex_data;
-          console.log(`  Texture ${texId}: ${width}x${height}, offset=${offset}, channels=${channels}, dataLength=${texData.length}`);
           let rgbaArray = new Uint8Array(width * height * 4);
           for (let p = 0; p < width * height; p++){
             rgbaArray[(p * 4) + 0] = texData[offset + ((p * channels) + 0)];
@@ -627,7 +645,6 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
       } else if(bodies[b]){
         bodies[0].add(bodies[b]);
       } else {
-        console.log("Body without Geometry detected; adding to bodies", b, bodies[b]);
         bodies[b] = new THREE.Group(); bodies[b].name = names[b + 1]; bodies[b].bodyID = b; bodies[b].has_custom_mesh = false;
         bodies[0].add(bodies[b]);
       }
@@ -642,25 +659,6 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
  * @param {mujoco} mujoco */
 export async function downloadExampleScenesFolder(mujoco) {
   let allFiles = [
-    // Go2 dependencies
-    "unitree_go2/assets/base_0.obj",
-    "unitree_go2/assets/base_1.obj",
-    "unitree_go2/assets/base_2.obj",
-    "unitree_go2/assets/base_3.obj",
-    "unitree_go2/assets/base_4.obj",
-    "unitree_go2/assets/calf_0.obj",
-    "unitree_go2/assets/calf_1.obj",
-    "unitree_go2/assets/calf_mirror_0.obj",
-    "unitree_go2/assets/calf_mirror_1.obj",
-    "unitree_go2/assets/foot.obj",
-    "unitree_go2/assets/hip_0.obj",
-    "unitree_go2/assets/hip_1.obj",
-    "unitree_go2/assets/thigh_0.obj",
-    "unitree_go2/assets/thigh_1.obj",
-    "unitree_go2/assets/thigh_mirror_0.obj",
-    "unitree_go2/assets/thigh_mirror_1.obj",
-    "unitree_go2/go2.xml",
-    "unitree_go2/scene.xml",
     // G1 dependencies
     "unitree_g1/meshes/head_link.STL",
     "unitree_g1/meshes/left_ankle_pitch_link.STL",
