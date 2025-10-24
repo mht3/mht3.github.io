@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { copyFileSync, mkdirSync, existsSync } from 'fs';
+import { copyFileSync, mkdirSync, existsSync, cpSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,7 +12,7 @@ export default defineConfig({
   publicDir: false, // We'll manually handle static files
   
   build: {
-    outDir: 'build',
+    outDir: 'docs',
     emptyOutDir: true,
     rollupOptions: {
       input: {
@@ -70,39 +70,48 @@ export default defineConfig({
         });
       },
       closeBundle() {
-        // Copy MuJoCo WASM files to build output
+        const outDir = join(__dirname, 'docs');
+        
+        // Copy MuJoCo WASM files
         const distDir = join(__dirname, 'dist');
-        const buildDir = join(__dirname, 'build');
-        
-        if (!existsSync(join(buildDir, 'dist'))) {
-          mkdirSync(join(buildDir, 'dist'), { recursive: true });
+        if (!existsSync(join(outDir, 'dist'))) {
+          mkdirSync(join(outDir, 'dist'), { recursive: true });
         }
-        
-        // Copy mujoco WASM files
         ['mujoco_wasm.wasm', 'mujoco_wasm.js'].forEach(file => {
           const src = join(distDir, file);
-          const dest = join(buildDir, 'dist', file);
+          const dest = join(outDir, 'dist', file);
           if (existsSync(src)) {
             copyFileSync(src, dest);
-            console.log(`✓ Copied ${file}`);
           }
         });
         
         // Copy ONNX Runtime WASM files from node_modules
         const nodeModulesOrtDir = join(__dirname, 'node_modules', 'onnxruntime-web', 'dist');
-        if (!existsSync(join(buildDir, 'ort'))) {
-          mkdirSync(join(buildDir, 'ort'), { recursive: true });
+        if (!existsSync(join(outDir, 'ort'))) {
+          mkdirSync(join(outDir, 'ort'), { recursive: true });
         }
-        
         ['ort-wasm-simd-threaded.wasm', 'ort-wasm-simd-threaded.mjs', 
          'ort-wasm-simd-threaded.jsep.wasm', 'ort-wasm-simd-threaded.jsep.mjs'].forEach(file => {
           const src = join(nodeModulesOrtDir, file);
-          const dest = join(buildDir, 'ort', file);
+          const dest = join(outDir, 'ort', file);
           if (existsSync(src)) {
             copyFileSync(src, dest);
-            console.log(`✓ Copied ${file}`);
           }
         });
+        
+        // Copy examples directory (scenes, policies, assets)
+        const examplesDir = join(__dirname, 'examples');
+        const outExamplesDir = join(outDir, 'examples');
+        if (existsSync(examplesDir)) {
+          cpSync(examplesDir, outExamplesDir, { recursive: true });
+        }
+        
+        // Copy _headers for GitHub Pages MIME type configuration
+        const headersFile = join(__dirname, '_headers');
+        const outHeadersFile = join(outDir, '_headers');
+        if (existsSync(headersFile)) {
+          copyFileSync(headersFile, outHeadersFile);
+        }
       }
     }
   ]

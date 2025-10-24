@@ -1,8 +1,7 @@
 # Dependencies
 node_modules/
 
-# Build outputs
-build/
+# Build cache (not the output)
 .vite/
 
 # System files
@@ -13,6 +12,7 @@ build/
 .vscode/
 .idea/
 
-# Keep these for deployment
-!dist/
-!ort/
+# IMPORTANT: Keep these for GitHub Pages deployment
+# docs/    - Built app for GitHub Pages (DO NOT IGNORE!)
+# dist/    - Keep MuJoCo WASM files
+# ort/     - Keep ONNX Runtime WASM files (source)

@@ -1,33 +1,7 @@
-# Jekyll configuration for proper MIME types
+# Jekyll configuration for MuJoCo WASM
+# GitHub Pages will serve from /docs directory
+
+# Include custom headers for WASM MIME types
 include:
   - _headers
-
-# Ensure WASM files are copied
-keep_files:
-  - dist
-  - ort
-  - node_modules
-
-# Don't process these as Jekyll templates
-exclude:
-  - node_modules
-  - package.json
-  - package-lock.json
-  - vite.config.js
-  - build
-  - src
-  - CMakeLists.txt
-  - build_windows.bat
-  - .gitignore
-
-# Serve static files
-defaults:
-  - scope:
-      path: "dist"
-    values:
-      sitemap: false
-  - scope:
-      path: "ort"
-    values:
-      sitemap: false
 
