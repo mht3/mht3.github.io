@@ -1,10 +1,9 @@
 import * as ort from 'onnxruntime-web';
 
 // Configure ONNX Runtime to find WASM files
-// In development: Vite serves from /ort/
-// In production: files are copied to /ort/ by build process
-const isProduction = import.meta.env.PROD;
-ort.env.wasm.wasmPaths = isProduction ? './ort/' : '/ort/';
+// Always use path relative to the page, not the bundle
+// This works for both dev (/) and production (/mujoco_wasm/docs/)
+ort.env.wasm.wasmPaths = new URL('./ort/', document.baseURI).href;
 
 // Use WASM backend (no WebGPU for now as it requires additional setup)
 ort.env.wasm.numThreads = 1; // Single-threaded for better compatibility
