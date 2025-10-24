@@ -1,10 +1,13 @@
-// Import from import map (node_modules path) per ORT docs
 import * as ort from 'onnxruntime-web';
 
-// import wasmUrl from 'onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url';
+// Configure ONNX Runtime to find WASM files
+// In development: Vite serves from /ort/
+// In production: files are copied to /ort/ by build process
+const isProduction = import.meta.env.PROD;
+ort.env.wasm.wasmPaths = isProduction ? './ort/' : '/ort/';
 
-// Make sure wasm path is discoverable; ort.wasm.min.mjs expects wasm next to dist
-ort.env.wasm.wasmPaths = "/mujoco_wasm/node_modules/onnxruntime-web/dist/";
+// Use WASM backend (no WebGPU for now as it requires additional setup)
+ort.env.wasm.numThreads = 1; // Single-threaded for better compatibility
 
 export class ONNXModule {
   constructor(config) {

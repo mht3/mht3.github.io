@@ -1,8 +1,8 @@
 
 import * as THREE           from 'three';
 import * as ort             from 'onnxruntime-web';
-import { GUI              } from 'three/addons/libs/lil-gui.module.min.js';
-import { OrbitControls    } from 'three/addons/controls/OrbitControls.js';
+import { GUI              } from '../node_modules/three/examples/jsm/libs/lil-gui.module.min.js';
+import { OrbitControls    } from '../node_modules/three/examples/jsm/controls/OrbitControls.js';
 import { DragStateManager } from './utils/DragStateManager.js';
 import { setupGUI, downloadExampleScenesFolder, loadSceneFromURL, getPosition, getQuaternion, toMujocoPos, standardNormal } from './mujocoUtils.js';
 import { ONNXModule } from './onnxHelper.js';

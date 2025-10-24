@@ -1,72 +1,119 @@
-<p align="center">
-  <a href="https://zalo.github.io/mujoco_wasm/"><img src="./examples/MuJoCoWasmLogo.png" href></a>
-</p>
-<p align="left">
-  <a href="https://github.com/zalo/mujoco_wasm/deployments/activity_log?environment=github-pages">
-      <img src="https://img.shields.io/github/deployments/zalo/mujoco_wasm/github-pages?label=Github%20Pages%20Deployment" title="Github Pages Deployment"></a>
-  <!--<a href="https://github.com/zalo/mujoco_wasm/deployments/activity_log?environment=Production">
-      <img src="https://img.shields.io/github/deployments/zalo/mujoco_wasm/Production?label=Vercel%20Deployment" title="Vercel Deployment"></a> -->
-  <!--<a href="https://lgtm.com/projects/g/zalo/mujoco_wasm/context:javascript">
-      <img alt="Language grade: JavaScript" src="https://img.shields.io/lgtm/grade/javascript/g/zalo/mujoco_wasm.svg?logo=lgtm&logoWidth=18"/></a> -->
-  <a href="https://github.com/zalo/mujoco_wasm/commits/main">
-      <img src="https://img.shields.io/github/last-commit/zalo/mujoco_wasm" title="Last Commit Date"></a>
-  <a href="https://github.com/zalo/mujoco_wasm/blob/main/LICENSE">
-      <img src="https://img.shields.io/badge/license-MIT-brightgreen" title="License: MIT"></a>
-</p>
+# MuJoCo WASM - Unitree G1 Balance Policy
 
-## The Power of MuJoCo in your Browser.
+Interactive MuJoCo simulation running in the browser with ONNX Runtime for neural network policies.
 
-Load and Run MuJoCo 3.3.2 Models using JavaScript and WebAssembly.
+## Features
 
-This repo is a fork of @stillonearth 's starter repository, adding tons of functionality and a comprehensive example scene.
+- ✨ Unitree G1 humanoid robot simulation
+- 🧠 Real-time ONNX policy inference
+- 🌐 Runs entirely in the browser via WebAssembly
+- 📦 Self-contained build (no CDN dependencies)
 
-### [See the Live Demo Here](https://zalo.github.io/mujoco_wasm/)
+## Development
 
-### [See a more Advanced Example Here](https://kzakka.com/robopianist/)
+### Prerequisites
 
-## Building
-
-**1. Install emscripten**
-
-**2. Build the mujoco_wasm Binary**
-
-On Linux, use:
 ```bash
-mkdir build
-cd build
-emcmake cmake ..
-make
+npm install
 ```
 
-On Windows, run `build_windows.bat`.
+### Local Development (Vite)
 
-*3. (Optional) Update MuJoCo libs*
+The recommended way for development:
 
-Build MuJoCo libs with wasm target and place to lib. Currently v3.3.2 included.
-
-## JavaScript API
-
-```javascript
-import load_mujoco from "./mujoco_wasm.js";
-
-// Load the MuJoCo Module
-const mujoco = await load_mujoco();
-
-// Set up Emscripten's Virtual File System
-mujoco.FS.mkdir('/working');
-mujoco.FS.mount(mujoco.MEMFS, { root: '.' }, '/working');
-mujoco.FS.writeFile("/working/humanoid.xml", await (await fetch("./examples/scenes/humanoid.xml")).text());
-
-// Load in the state from XML
-let model       = new mujoco.Model("/working/humanoid.xml");
-let state       = new mujoco.State(model);
-let simulation  = new mujoco.Simulation(model, state);
+```bash
+npm run dev
 ```
 
-Typescript definitions are available.
+This starts a Vite dev server at `http://localhost:3000` with:
+- ✅ Proper WASM MIME types
+- ✅ Hot module replacement
+- ✅ Fast rebuilds
 
-## Work In Progress Disclaimer
+### Jekyll Development (GitHub Pages preview)
 
-So far, most mjModel and mjData state variables and functions (that do not require custom structs) are exposed.
+To test exactly as it will appear on GitHub Pages:
 
-At some point, I'd like to de-opinionate the binding and make it match the original MuJoCo API better.
+```bash
+npm run jekyll:serve
+```
+
+This serves at `http://localhost:4000/mujoco_wasm/`
+
+**Note:** WASM MIME type warnings are expected with Jekyll's built-in server, but the fallback to ArrayBuffer works fine. GitHub Pages deployment will have proper MIME types via the `_headers` file.
+
+## Building for Production
+
+Build optimized bundle:
+
+```bash
+npm run build
+```
+
+This creates a `build/` directory with all assets bundled and ready for deployment.
+
+### Deploy to GitHub Pages
+
+The `_headers` file configures Netlify/GitHub Pages to serve WASM files with correct MIME types:
+- `application/wasm` for `.wasm` files
+- Proper CORS headers for SharedArrayBuffer support
+
+Simply push to GitHub and the site will automatically deploy with correct MIME types.
+
+## Project Structure
+
+```
+mujoco_wasm/
+├── index.html              # Entry point
+├── examples/
+│   ├── main.js            # Main application logic
+│   ├── observationHelpers.js  # G1 observation processing
+│   ├── mujocoUtils.js     # MuJoCo utilities
+│   ├── yamlParser.js      # Policy configuration parser
+│   ├── onnxHelper.js      # ONNX Runtime wrapper
+│   ├── scenes/            # Robot models
+│   └── checkpoints/       # Neural network policies
+├── dist/                  # MuJoCo WASM binaries
+├── ort/                   # ONNX Runtime WASM files
+├── _headers              # GitHub Pages MIME configuration
+└── vite.config.js        # Build configuration
+```
+
+## Policies
+
+Two balance policies are available:
+
+- **Baseline**: Standard MLP policy
+- **Ours**: State projection architecture
+
+Both trained in Isaac Lab and deployed to MuJoCo WASM.
+
+## Troubleshooting
+
+### MIME Type Warnings
+
+If you see warnings about MIME types during Jekyll serve:
+- ✅ This is expected with Jekyll's development server
+- ✅ The fallback to ArrayBuffer instantiation works fine
+- ✅ Production deployment will have correct MIME types
+
+### WASM Loading Errors
+
+1. Ensure WASM files exist in `dist/` and `ort/`
+2. Check browser console for specific errors
+3. Try clearing browser cache
+
+### Build Issues
+
+```bash
+# Clean install
+rm -rf node_modules package-lock.json
+npm install
+
+# Rebuild
+npm run build
+```
+
+## License
+
+See LICENSE file for details.
