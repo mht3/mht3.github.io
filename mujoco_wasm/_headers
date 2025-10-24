@@ -1,0 +1,9 @@
+# MIME types for ONNX Runtime Web files
+/ort/*.wasm
+  Content-Type: application/wasm
+
+/ort/*.mjs
+  Content-Type: application/javascript
+
+/ort/*.js
+  Content-Type: application/javascript
