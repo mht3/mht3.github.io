@@ -38,7 +38,7 @@ export function setupGUI(parentContext) {
 
   // Add policy selector
   parentContext.gui.add(parentContext.params, 'policy', policyOptions)
-    .name('Policy Model')
+    .name('Policy')
     .onChange(async (value) => {
       await parentContext.loadPolicy(value);
     });
