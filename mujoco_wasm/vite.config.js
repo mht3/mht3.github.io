@@ -12,7 +12,7 @@ export default defineConfig({
   publicDir: false, // We'll manually handle static files
   
   build: {
-    outDir: 'docs',
+    outDir: '../humanoid/demo',
     emptyOutDir: true,
     rollupOptions: {
       input: {
@@ -70,7 +70,7 @@ export default defineConfig({
         });
       },
       closeBundle() {
-        const outDir = join(__dirname, 'docs');
+        const outDir = join(__dirname, '..', 'humanoid', 'demo');
         
         // Copy MuJoCo WASM files
         const distDir = join(__dirname, 'dist');

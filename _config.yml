@@ -130,9 +130,9 @@ defaults:
     values:
       sitemap:         false
 
-  # Serve mujoco_wasm/docs/ as static files (built by Vite)
+  # Serve humanoid/demo/ as static files (built by Vite)
   - scope:
-      path:            mujoco_wasm/docs/
+      path:            humanoid/demo/
     values:
       sitemap:         false
 
@@ -349,7 +349,7 @@ exclude:
 include:
   - .well-known
   - LICENSE.md
-  - mujoco_wasm/docs/_headers
+  - humanoid/demo/_headers
 
 
 # Plugins
