@@ -130,6 +130,12 @@ defaults:
     values:
       sitemap:         false
 
+  # Serve humanoid/demo/ as static files (built by Vite)
+  - scope:
+      path:            humanoid/demo/
+    values:
+      sitemap:         false
+
   - scope:
       path:            licenses/
     values:
@@ -323,9 +329,27 @@ exclude:
   - vendor
   - Gemfile
   - Gemfile.lock
+  # Exclude mujoco_wasm source files (keep only docs/)
+  - mujoco_wasm/examples
+  - mujoco_wasm/dist
+  - mujoco_wasm/ort
+  - mujoco_wasm/src
+  - mujoco_wasm/lib
+  - mujoco_wasm/include
+  - mujoco_wasm/node_modules
+  - mujoco_wasm/index.html
+  - mujoco_wasm/vite.config.js
+  - mujoco_wasm/package.json
+  - mujoco_wasm/package-lock.json
+  - mujoco_wasm/_config.yml
+  - mujoco_wasm/_headers
+  - mujoco_wasm/.nojekyll
+  - mujoco_wasm/CMakeLists.txt
+  - mujoco_wasm/build_windows.bat
 include:
   - .well-known
   - LICENSE.md
+  - humanoid/demo/_headers
 
 
 # Plugins

@@ -1,0 +1,24 @@
+# MIME types for WebAssembly files
+/*.wasm
+  Content-Type: application/wasm
+  
+/dist/*.wasm
+  Content-Type: application/wasm
+
+/ort/*.wasm
+  Content-Type: application/wasm
+
+# JavaScript modules
+/*.mjs
+  Content-Type: application/javascript
+
+/ort/*.mjs
+  Content-Type: application/javascript
+
+/ort/*.js
+  Content-Type: application/javascript
+
+# Enable SharedArrayBuffer for ONNX Runtime threading
+/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin

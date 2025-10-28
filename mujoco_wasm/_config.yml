@@ -1,0 +1,7 @@
+# Jekyll configuration for MuJoCo WASM
+# GitHub Pages will serve from /docs directory
+
+# Include custom headers for WASM MIME types
+include:
+  - _headers
+
