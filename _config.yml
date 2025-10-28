@@ -53,8 +53,8 @@ menu:
     url:               /
   - title:             Research
     url:               /research/
-  - title:             Resume
-    url:               /resume/
+  - title:             CV
+    url:               /cv/
 
 
 # Add links to the footer.
