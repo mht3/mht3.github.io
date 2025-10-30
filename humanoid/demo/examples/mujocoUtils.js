@@ -24,33 +24,239 @@ export function setupGUI(parentContext) {
     parentContext.controls.target.set(0, 0.7, 0);
     parentContext.controls.update(); });
 
-  // Add scene selection dropdown.
-  let reload = reloadFunc.bind(parentContext);
-  parentContext.gui.add(parentContext.params, 'scene', {
-    "Unitree G1": "unitree_g1/scene_23dof.xml",
-  }).name('Robot Scene').onChange(reload);
-
-  // Add policy selection dropdown for G1 models
-  const policyOptions = {
-    "Ours": "./examples/checkpoints/g1/balance_deploy_state_projection.yaml",
-    "Baseline": "./examples/checkpoints/g1/balance_deploy_baseline.yaml",
+  // Add task/policy/velocity controls at root to avoid nested sections.
+  // Switching tasks loads the corresponding checkpoints and toggles velocity controls.
+  parentContext.params.task = parentContext.params.task || 'Balance';
+  parentContext.params.policyLabel = parentContext.params.policyLabel || 'Ours';
+  const policyMap = {
+    Balance: {
+      "Ours": {
+        yaml: "./examples/checkpoints/g1/balance/balance_deploy_state_projection.yaml",
+        onnx: "./examples/checkpoints/g1/balance/balance_policy_state_projection.onnx",
+      },
+      "Baseline": {
+        yaml: "./examples/checkpoints/g1/balance/balance_deploy_baseline.yaml",
+        onnx: "./examples/checkpoints/g1/balance/balance_policy_baseline.onnx",
+      }
+    },
+    Velocity: {
+      "Ours": {
+        yaml: "./examples/checkpoints/g1/velocity/velocity_deploy_ours.yaml",
+        onnx: "./examples/checkpoints/g1/velocity/velocity_policy_ours.onnx",
+      },
+      "Baseline": {
+        yaml: "./examples/checkpoints/g1/velocity/velocity_deploy_baseline.yaml",
+        onnx: "./examples/checkpoints/g1/velocity/velocity_policy_baseline.onnx",
+      }
+    }
   };
 
-  // Add policy selector
-  parentContext.gui.add(parentContext.params, 'policy', policyOptions)
-    .name('Policy')
-    .onChange(async (value) => {
-      await parentContext.loadPolicy(value);
-    });
+  const getPolicyLabelsForTask = (task) => {
+    const available = policyMap[task] || {};
+    return Object.keys(available);
+  };
 
-  // Fix robust behavior: zero command velocity and fixed kp
+  const ensurePolicyLabel = (task, label) => {
+    const available = policyMap[task] || {};
+    if (label && (label in available)) {
+      return label;
+    }
+    if ('Ours' in available) {
+      return 'Ours';
+    }
+    const labels = getPolicyLabelsForTask(task);
+    return labels.length > 0 ? labels[0] : null;
+  };
+
+  let policyController;
+
+  async function applyPolicySelection(label, { fromController = false } = {}) {
+    const task = parentContext.params.task;
+    const available = policyMap[task];
+    if (!available) {
+      console.warn('[Policy Change] no policies found for task', task);
+      return;
+    }
+    const normalizedLabel = ensurePolicyLabel(task, label);
+    if (!normalizedLabel) {
+      console.warn('[Policy Change] unable to determine policy label for task', task);
+      return;
+    }
+    const entry = available[normalizedLabel];
+    if (!entry) {
+      console.warn('[Policy Change] missing entry for task', task, 'label', normalizedLabel);
+      return;
+    }
+    const { yaml: yamlPath, onnx: onnxPath } = entry;
+    if (!yamlPath || !onnxPath) {
+      console.warn('[Policy Change] missing YAML/ONNX paths for task', task, 'label', normalizedLabel, entry);
+      return;
+    }
+
+    parentContext.params.policyLabel = normalizedLabel;
+    parentContext.params.policy = yamlPath;
+    parentContext.params.policyOnnx = onnxPath;
+    if (!fromController && policyController) {
+      policyController.updateDisplay();
+    }
+
+    console.log('[Policy Change] BEGIN', { task, label: normalizedLabel, yaml: yamlPath, onnx: onnxPath });
+    try {
+      if (typeof parentContext.resetSimulation === 'function') {
+        console.log('[Policy Change] calling resetSimulation');
+        parentContext.resetSimulation();
+        console.log('[Policy Change] resetSimulation completed');
+      } else {
+        console.log('[Policy Change] resetSimulation not available');
+      }
+      console.log('[Policy Change] calling loadPolicy', yamlPath);
+      await parentContext.loadPolicy(yamlPath, onnxPath);
+      console.log('[Policy Change] SUCCESS loaded policy', yamlPath, onnxPath);
+    } catch (e) {
+      console.error('[Policy Change] ERROR while switching policy', e);
+    }
+  }
+
+  const taskController = parentContext.gui.add(parentContext.params, 'task', {
+    "Balance": "Balance",
+    "Velocity": "Velocity",
+  }).name('Task');
+
+  const ensurePolicyControllerPosition = () => {
+    if (!taskController || !policyController) { return; }
+    const controllers = parentContext.gui && Array.isArray(parentContext.gui.__controllers)
+      ? parentContext.gui.__controllers
+      : null;
+    if (!controllers) { return; }
+    const taskIndex = controllers.indexOf(taskController);
+    const policyIndex = controllers.indexOf(policyController);
+    if (taskIndex === -1 || policyIndex === -1) { return; }
+    if (policyIndex !== taskIndex + 1) {
+      controllers.splice(policyIndex, 1);
+      controllers.splice(taskIndex + 1, 0, policyController);
+    }
+
+    const ul = parentContext.gui && parentContext.gui.__ul ? parentContext.gui.__ul : null;
+    const taskLi = taskController.domElement?.parentElement;
+    const policyLi = policyController.domElement?.parentElement;
+    if (!taskLi || !policyLi || !ul) { return; }
+
+    ul.insertBefore(policyLi, taskLi.nextSibling);
+  };
+
+  const labelsToOptions = (labels) => labels.reduce((acc, label) => {
+    acc[label] = label;
+    return acc;
+  }, {});
+
+  const updatePolicyControllerOptions = (labels) => {
+    if (!policyController) { return; }
+    const optionsObj = labelsToOptions(labels);
+    policyController.__options = optionsObj;
+    const select = policyController.domElement?.querySelector('select');
+    if (!select) { return; }
+    select.innerHTML = '';
+    for (const label of labels) {
+      const option = document.createElement('option');
+      option.value = label;
+      option.textContent = label;
+      select.appendChild(option);
+    }
+    policyController.__select = select;
+    ensurePolicyControllerPosition();
+  };
+
+  // Initialize policy selection state before creating controller
+  parentContext.params.policyLabel = ensurePolicyLabel(parentContext.params.task, parentContext.params.policyLabel);
+  if (parentContext.params.policyLabel) {
+    const initialYaml = policyMap[parentContext.params.task]?.[parentContext.params.policyLabel];
+    if (initialYaml) {
+      const initial = policyMap[parentContext.params.task]?.[parentContext.params.policyLabel];
+      if (initial) {
+        parentContext.params.policy = initial.yaml;
+        parentContext.params.policyOnnx = initial.onnx;
+      }
+    }
+  }
+
+  const initialLabels = getPolicyLabelsForTask(parentContext.params.task);
+  policyController = parentContext.gui.add(
+    parentContext.params,
+    'policyLabel',
+    labelsToOptions(initialLabels)
+  ).name('Policy');
+
+  policyController.onChange(async (label) => {
+    await applyPolicySelection(label, { fromController: true });
+  });
+
+  ensurePolicyControllerPosition();
+
+  // Velocity controls (visible only in Velocity task)
+  parentContext.params.command_vel_x = parentContext.params.command_vel_x ?? 0.0;
+  parentContext.params.command_vel_y = parentContext.params.command_vel_y ?? 0.0;
+  const velocityXCtrl = parentContext.gui.add(parentContext.params, 'command_vel_x', -0.5, 1.0).name('x velocity');
+  const velocityYCtrl = parentContext.gui.add(parentContext.params, 'command_vel_y', -0.3, 0.3).name('y velocity');
+
+  // Snap to nearest tenth and apply
+  const roundTenth = (v) => Math.max(-999, Math.min(999, Math.round(v * 10) / 10));
+  if (velocityXCtrl.step) velocityXCtrl.step(0.1);
+  velocityXCtrl.onChange((v) => {
+    const r = roundTenth(v);
+    if (r !== v) velocityXCtrl.setValue(r);
+    parentContext.params.command_vel_x = r;
+  });
+  if (velocityYCtrl.step) velocityYCtrl.step(0.1);
+  velocityYCtrl.onChange((v) => {
+    const r = roundTenth(v);
+    if (r !== v) velocityYCtrl.setValue(r);
+    parentContext.params.command_vel_y = r;
+  });
+
+  function updateVelocityControlsVisibility() {
+    const isVelocity = parentContext.params.task === 'Velocity';
+    if (isVelocity) { velocityXCtrl.show(); velocityYCtrl.show(); }
+    else { velocityXCtrl.hide(); velocityYCtrl.hide(); }
+  }
+
+  function setPolicyOptionsForTask(task) {
+    if (!policyController) { return null; }
+    const labels = getPolicyLabelsForTask(task);
+    if (!labels.length) {
+      return null;
+    }
+    updatePolicyControllerOptions(labels);
+    parentContext.params.policyLabel = ensurePolicyLabel(task, parentContext.params.policyLabel);
+    policyController.updateDisplay();
+    ensurePolicyControllerPosition();
+    return parentContext.params.policyLabel;
+  }
+
+  taskController.onChange(async () => {
+    const task = parentContext.params.task;
+    const label = setPolicyOptionsForTask(task);
+    console.log('[Task Change] applying policy for task', task, 'label', label);
+    await applyPolicySelection(label, { fromController: false });
+    console.log('[Task Change] policy loaded for task', task);
+    updateVelocityControlsVisibility();
+  });
+
+  // Initialize defaults according to current task
+  const initialLabel = setPolicyOptionsForTask(parentContext.params.task);
+  if (initialLabel) {
+    const initialEntry = policyMap[parentContext.params.task][initialLabel];
+    parentContext.params.policy = initialEntry?.yaml;
+    parentContext.params.policyOnnx = initialEntry?.onnx;
+    policyController.updateDisplay();
+  }
+  updateVelocityControlsVisibility();
+
+  // Fix robust behavior: zero command velocity
   parentContext.params.command_vel_x = 0.0;
   parentContext.params.command_vel_y = 0.0;
   parentContext.params.command_vel_z = 0.0;
   parentContext.params.command_vel_yaw = 0.0;
-  parentContext.params.impedance_kp = 24.0;
   parentContext.params.use_setpoint = false;
-  parentContext.params.compliant_mode = false;
 
   // Add a help menu.
   // Parameters:
@@ -380,7 +586,7 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
     parent.qvel_adr_isaac[i] = model.jnt_dofadr[jid];
   }
 
-  // Default joint positions from asset_meta (match facet)
+  // Default joint positions from asset_meta
   if (asset_meta && asset_meta["default_joint_pos"]) {
     parent.defaultJpos = new Float32Array(asset_meta["default_joint_pos"]);
   } else {
@@ -445,7 +651,7 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
         
         bodies[b].bodyID = b;
 
-        // Mark pelvis/base id for impulse application (match facet)
+        // Mark pelvis/base id for impulse application
         if (bodies[b].name === 'base' || bodies[b].name === 'pelvis') {
           parent.pelvis_body_id = b;
         }

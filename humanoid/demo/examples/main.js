@@ -10,7 +10,7 @@ import { Observations } from './observationHelpers.js';
 import { parseYAMLConfig, yamlConfigToPolicyConfig } from './yamlParser.js';
 import   load_mujoco        from '../dist/mujoco_wasm.js';
 
-// Simple loading overlay (like facet)
+// Simple loading overlay
 const loadingOverlay = document.createElement('div');
 loadingOverlay.style.position = 'fixed';
 loadingOverlay.style.inset = '0';
@@ -77,14 +77,14 @@ export class MuJoCoDemo {
       ctrlnoiserate: 0.0, 
       ctrlnoisestd: 0.0, 
       keyframeNumber: 0,
-      policy: "./examples/checkpoints/g1/balance_deploy_state_projection.yaml",
+      policy: "./examples/checkpoints/g1/balance/balance_deploy_state_projection.yaml",
+      policyOnnx: "./examples/checkpoints/g1/balance/balance_policy_state_projection.onnx",
+      policyLabel: 'Ours',
       command_vel_x: 0.0,
       command_vel_y: 0.0,
       command_vel_z: 0.0,
       command_vel_yaw: 0.0,
-      impedance_kp: 25.0,
       use_setpoint: false,
-      compliant_mode: false,
       impulse_remain_time: 0.0
     };
     this.mujoco_time = 0.0;
@@ -165,7 +165,7 @@ export class MuJoCoDemo {
     setupGUI(this);
     // Auto-load robust policy on start
     loadingText.textContent = 'Loading ONNX policy...';
-    await this.loadPolicy(this.params.policy);
+    await this.loadPolicy(this.params.policy, this.params.policyOnnx);
     loadingBar.style.width = '100%';
     setTimeout(() => { loadingOverlay.remove(); }, 300);
     
@@ -175,7 +175,7 @@ export class MuJoCoDemo {
   }
 
   resetSimulation() {
-    console.log("Resetting simulation...");
+    console.log("[Reset] begin");
     
     // Stop any in-flight inference
     this.inferenceGen++;
@@ -228,11 +228,11 @@ export class MuJoCoDemo {
     // Forward kinematics to update visualization
     this.simulation.forward();
     
-    console.log("Simulation reset complete");
+    console.log("[Reset] complete");
   }
 
-  async loadPolicy(policyPath) {
-    console.log("Loading policy:", policyPath);
+  async loadPolicy(policyPath, onnxOverride = null) {
+    console.log("[LoadPolicy] begin", policyPath, onnxOverride ? `(onnx override: ${onnxOverride})` : '');
     
     try {
       // Wait until inference is not running
@@ -245,14 +245,19 @@ export class MuJoCoDemo {
     // Check if it's a YAML or JSON file
     if (policyPath.endsWith('.yaml') || policyPath.endsWith('.yml')) {
       // Parse YAML and convert to policy config
+      console.log("[LoadPolicy] parsing YAML", policyPath);
       const yamlConfig = await parseYAMLConfig(policyPath);
       
       // Determine ONNX path based on YAML filename
-      const onnxPath = policyPath.replace('_deploy_baseline.yaml', '_policy_baseline.onnx')
-                                 .replace('_deploy_state_projection.yaml', '_policy_state_projection.onnx');
+      const onnxPath = onnxOverride;
+      if (!onnxPath) {
+        throw new Error(`ONNX path not provided for policy: ${policyPath}`);
+      }
       
       config = yamlConfigToPolicyConfig(yamlConfig, onnxPath);
-      console.log("Loaded YAML config for G1");
+      this.params.policy = policyPath;
+      this.params.policyOnnx = onnxPath;
+      console.log("[LoadPolicy] YAML parsed; onnx:", onnxPath);
     } else {
       // Load policy config from JSON (legacy)
       const response = await fetch(policyPath);
@@ -261,10 +266,13 @@ export class MuJoCoDemo {
 
     // Initialize ONNX model (defer assigning to this.policy until session is ready)
     const policy = new ONNXModule(config.onnx);
+    console.log("[LoadPolicy] initializing ONNX session");
     await policy.init();
+    console.log("[LoadPolicy] ONNX session ready");
     this.adapt_hx.fill(0);
     this.rpy.set(0, 0, 0);
 
+    console.log("[LoadPolicy] resetting simulation data");
     this.simulation.resetData();
     
     // Initialize action buffers before constructing observations so PrevActions has correct dims
@@ -299,6 +307,7 @@ export class MuJoCoDemo {
 
     // Set up observations based on config
     this.observations = {};
+    console.log("[LoadPolicy] building observations");
     for (const [key, obsList] of Object.entries(config.obs_config)) {
       this.observations[key] = obsList.map(obsConfig => createObservation(obsConfig));
     }
@@ -347,6 +356,7 @@ export class MuJoCoDemo {
     
     // Assign policy only after it has an initialized session
     this.policy = policy;
+    console.log("[LoadPolicy] policy assigned; computing decimation");
     // Initialize recurrent inputs (is_init, adapt_hx)
     this.inputDict = this.policy.initInput();
     
@@ -355,13 +365,14 @@ export class MuJoCoDemo {
     // model.opt.timestep is the physics timestep (e.g., 0.002s = 500Hz or 0.005s = 200Hz)
     const physics_dt = this.model?.opt?.timestep || 0.005; // Default to 0.005s (200Hz) if not available
     this.control_decimation = Math.round(config.step_dt / physics_dt);
-    console.log("Policy loaded: actions=" + this.numActions + ", control_rate=" + config.step_dt + "s, physics_dt=" + physics_dt + "s, decimation=" + this.control_decimation);
+    console.log("[LoadPolicy] loaded: actions=" + this.numActions + ", control_rate=" + config.step_dt + "s, physics_dt=" + physics_dt + "s, decimation=" + this.control_decimation);
     
       // Reset recurrent inputs and invalidate any in-flight inference
       this.inputDict = this.policy.initInput();
       this.inferenceGen++;
+      console.log("[LoadPolicy] complete");
     } catch (error) {
-      console.error("ERROR loading policy:", error);
+      console.error("[LoadPolicy] ERROR", error);
       console.error("Stack trace:", error.stack);
       throw error; // Re-throw to see it in console
     }
