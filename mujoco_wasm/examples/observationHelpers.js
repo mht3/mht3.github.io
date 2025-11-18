@@ -200,9 +200,9 @@ function quaternionToAnchorColumns(quaternion) {
  * Each with configurable history length and scaling
  */
 class G1YAMLObs {
-  constructor(model, simulation, demo, kwargs = {}) {
+  constructor(model, data, demo, kwargs = {}) {
     this.model = model;
-    this.simulation = simulation;
+    this.data = data;
     this.demo = demo;
     
     const { yaml_config, obs_terms, num_joints } = kwargs;
@@ -337,6 +337,18 @@ class G1YAMLObs {
     }
   }
 
+  async setMotionProgress(normalized) {
+    if (!this.motionLoader || !isFinite(normalized)) {
+      return;
+    }
+    const clamped = Math.max(0, Math.min(1, normalized));
+    const targetTime = clamped * this.motionLoader.duration;
+    this.motionTime = targetTime;
+    this.motionLoader.update(targetTime);
+    this.motionInitQuat = null;
+    this.history_initialized = false;
+  }
+
   async replayMotion() {
     if (this.ready && typeof this.ready.then === 'function') {
       try {
@@ -384,7 +396,7 @@ class G1YAMLObs {
   }
 
   computeTorsoQuaternion() {
-    const qpos = this.simulation.qpos;
+    const qpos = this.data.qpos;
     const baseQuat = new THREE.Quaternion(
       qpos[this.base_qpos_adr + 4],
       qpos[this.base_qpos_adr + 5],
@@ -456,15 +468,18 @@ class G1YAMLObs {
     }
     
     if (this.motionLoader) {
-      this.motionTime = Math.min(this.motionTime + this.policy_dt, this.motionLoader.duration);
+      const stepDt = (typeof this.motionLoader.dt === 'number' && isFinite(this.motionLoader.dt) && this.motionLoader.dt > 0)
+        ? this.motionLoader.dt
+        : this.policy_dt;
+      this.motionTime = Math.min(this.motionTime + stepDt, this.motionLoader.duration);
     }
 
     return new Float32Array(obs_buffer);
   }
   
   computeTerm(name, config) {
-    const qpos = this.simulation.qpos;
-    const qvel = this.simulation.qvel;
+    const qpos = this.data.qpos;
+    const qvel = this.data.qvel;
     const scale = config.scale;
     
     if (!scale || scale.length === 0) {
@@ -503,13 +518,10 @@ class G1YAMLObs {
       case 'velocity_commands': {
         // Get velocity commands from demo params
         const command_vel_x = this.demo.params["command_vel_x"] || 0.0;
-        const command_vel_y = this.demo.params["command_vel_y"] || 0.0;
-        const command_vel_yaw = this.demo.params["command_vel_yaw"] || 0.0;
-        
         return new Float32Array([
           command_vel_x * scale[0],
-          command_vel_y * scale[1],
-          command_vel_yaw * scale[2]
+          0.0 * (scale[1] ?? 1),
+          0.0 * (scale[2] ?? 1)
         ]);
       }
       

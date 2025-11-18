@@ -5,11 +5,11 @@ import { MuJoCoDemo } from './main.js';
 export async function reloadFunc() {
   // Delete the old scene and load the new scene
   this.scene.remove(this.scene.getObjectByName("MuJoCo Root"));
-  [this.model, this.state, this.simulation, this.bodies, this.lights] =
+  [this.model, this.data, this.bodies, this.lights] =
     await loadSceneFromURL(this.mujoco, this.params.scene, this);
-  this.simulation.forward();
+  this.mujoco.mj_forward(this.model, this.data);
   for (let i = 0; i < this.updateGUICallbacks.length; i++) {
-    this.updateGUICallbacks[i](this.model, this.simulation, this.params);
+    this.updateGUICallbacks[i](this.model, this.data, this.params);
   }
 }
 
@@ -18,7 +18,7 @@ export function setupGUI(parentContext) {
 
   // Make sure we reset the camera when the scene is changed or reloaded.
   parentContext.updateGUICallbacks.length = 0;
-  parentContext.updateGUICallbacks.push((model, simulation, params) => {
+  parentContext.updateGUICallbacks.push((model, data, params) => {
     // TODO: Use free camera parameters from MuJoCo
     parentContext.camera.position.set(2.0, 1.7, 1.7);
     parentContext.controls.target.set(0, 0.7, 0);
@@ -61,6 +61,30 @@ export function setupGUI(parentContext) {
         motion: "./examples/checkpoints/g1/squat/squat_29dof.csv",
       }
     },
+    Single_Leg: {
+      "Ours": {
+        yaml: "./examples/checkpoints/g1/single_leg_2/single_leg_2_deploy_state_projection.yaml",
+        onnx: "./examples/checkpoints/g1/single_leg_2/single_leg_2_policy_state_projection.onnx",
+        motion: "./examples/checkpoints/g1/single_leg_2/nezha_29dof.csv",
+      },
+      "Baseline": {
+        yaml: "./examples/checkpoints/g1/single_leg_2/single_leg_2_deploy_baseline.yaml",
+        onnx: "./examples/checkpoints/g1/single_leg_2/single_leg_2_policy_baseline.onnx",
+        motion: "./examples/checkpoints/g1/single_leg_2/nezha_29dof.csv",
+      }
+    },
+    Swallow_Balance: {
+      "Ours": {
+        yaml: "./examples/checkpoints/g1/swallow_balance/swallow_balance_deploy_state_projection.yaml",
+        onnx: "./examples/checkpoints/g1/swallow_balance/swallow_balance_policy_state_projection.onnx",
+        motion: "./examples/checkpoints/g1/swallow_balance/swallow_balance_29dof.csv",
+      },
+      "Baseline": {
+        yaml: "./examples/checkpoints/g1/swallow_balance/swallow_balance_deploy_baseline.yaml",
+        onnx: "./examples/checkpoints/g1/swallow_balance/swallow_balance_policy_baseline.onnx",
+        motion: "./examples/checkpoints/g1/swallow_balance/swallow_balance_29dof.csv",
+      }
+    },
   };
 
   const getPolicyLabelsForTask = (task) => {
@@ -83,12 +107,35 @@ export function setupGUI(parentContext) {
   let policyController;
   let replayMotionCtrl;
 
+  function insertControllerAfter(controller, referenceController) {
+    if (!controller || !referenceController) { return; }
+    const ul = parentContext.gui && parentContext.gui.__ul;
+    if (!ul) { return; }
+    const controllerLi = controller.domElement?.parentElement;
+    const referenceLi = referenceController.domElement?.parentElement;
+    if (!controllerLi || !referenceLi) { return; }
+    const currentNext = referenceLi.nextSibling;
+    if (currentNext === controllerLi) { return; }
+    ul.insertBefore(controllerLi, currentNext);
+  }
+
   const updateReplayMotionVisibility = () => {
-    if (!replayMotionCtrl) { return; }
-    const isSquatTask = parentContext.params.task === 'Squat';
+    if (!replayMotionCtrl || !replaySlider) { return; }
+    ensureControlOrdering();
     const hasMotionReplay = !!parentContext.motionObservationsPresent;
-    if (isSquatTask && hasMotionReplay) { replayMotionCtrl.show(); }
-    else { replayMotionCtrl.hide(); }
+    if (hasMotionReplay) {
+      replayMotionCtrl.show();
+      replaySlider.show();
+      if (parentContext.replayControls && parentContext.replayProgressController) {
+        parentContext.replayControls.replayTime = parentContext.motionUISeconds ?? 0;
+        parentContext._updatingReplaySlider = true;
+        parentContext.replayProgressController.updateDisplay();
+        parentContext._updatingReplaySlider = false;
+      }
+    } else {
+      replayMotionCtrl.hide();
+      replaySlider.hide();
+    }
   };
 
   async function applyPolicySelection(label, { fromController = false } = {}) {
@@ -122,6 +169,9 @@ export function setupGUI(parentContext) {
     if (!fromController && policyController) {
       policyController.updateDisplay();
     }
+    parentContext.motionObservationsPresent = false;
+    parentContext.motionUISeconds = 0;
+    updateReplayMotionVisibility();
 
     console.log('[Policy Change] BEGIN', { task, label: normalizedLabel, yaml: yamlPath, onnx: onnxPath });
     try {
@@ -136,6 +186,12 @@ export function setupGUI(parentContext) {
       await parentContext.loadPolicy(yamlPath, onnxPath);
       console.log('[Policy Change] SUCCESS loaded policy', yamlPath, onnxPath);
       updateReplayMotionVisibility();
+      if (parentContext.replayControls && parentContext.replayProgressController) {
+        parentContext.replayControls.replayTime = parentContext.motionUISeconds ?? 0;
+        parentContext._updatingReplaySlider = true;
+        parentContext.replayProgressController.updateDisplay();
+        parentContext._updatingReplaySlider = false;
+      }
     } catch (e) {
       console.error('[Policy Change] ERROR while switching policy', e);
     }
@@ -145,6 +201,8 @@ export function setupGUI(parentContext) {
     "Balance": "Balance",
     "Velocity": "Velocity",
     "Squat": "Squat",
+    "Single Leg": "Single_Leg",
+    "Swallow Balance": "Swallow_Balance"
   }).name('Task');
 
   const ensurePolicyControllerPosition = () => {
@@ -221,29 +279,71 @@ export function setupGUI(parentContext) {
 
   // Velocity controls (visible only in Velocity task)
   parentContext.params.command_vel_x = parentContext.params.command_vel_x ?? 0.0;
-  parentContext.params.command_vel_y = parentContext.params.command_vel_y ?? 0.0;
-  const velocityXCtrl = parentContext.gui.add(parentContext.params, 'command_vel_x', -0.5, 1.0).name('x velocity');
-  const velocityYCtrl = parentContext.gui.add(parentContext.params, 'command_vel_y', -0.3, 0.3).name('y velocity');
+  const velocityXCtrl = parentContext.gui.add(parentContext.params, 'command_vel_x', -0.5, 1.0).name('velocity');
 
-  // Snap to nearest tenth and apply
-  const roundTenth = (v) => Math.max(-999, Math.min(999, Math.round(v * 10) / 10));
-  if (velocityXCtrl.step) velocityXCtrl.step(0.1);
-  velocityXCtrl.onChange((v) => {
-    const r = roundTenth(v);
-    if (r !== v) velocityXCtrl.setValue(r);
-    parentContext.params.command_vel_x = r;
-  });
-  if (velocityYCtrl.step) velocityYCtrl.step(0.1);
-  velocityYCtrl.onChange((v) => {
-    const r = roundTenth(v);
-    if (r !== v) velocityYCtrl.setValue(r);
-    parentContext.params.command_vel_y = r;
-  });
+  const replayControls = {
+    replayTime: 0
+  };
+  const replaySlider = parentContext.gui
+    .add(replayControls, 'replayTime', 0, 1, 0.1)
+    .name('Motion Time (s)')
+    .listen();
+  if (typeof replaySlider.disable === 'function') {
+    replaySlider.disable();
+  }
+  const sliderRange = replaySlider.domElement?.querySelector('input[type="range"]');
+  if (sliderRange) {
+    sliderRange.setAttribute('disabled', '');
+    sliderRange.style.pointerEvents = 'none';
+    sliderRange.style.opacity = '0.7';
+  }
+  const sliderNumber = replaySlider.domElement?.querySelector('input[type="number"]');
+  if (sliderNumber) {
+    sliderNumber.setAttribute('disabled', '');
+    sliderNumber.style.pointerEvents = 'none';
+    sliderNumber.style.opacity = '0.7';
+  }
+  replaySlider.hide();
+
+  parentContext.replayProgressController = replaySlider;
+  parentContext.replayControls = replayControls;
+
+  const replayMotionAction = {
+    replayMotion: async () => {
+      if (parentContext._updatingReplaySlider) { return; }
+      parentContext._updatingReplaySlider = true;
+      replayControls.replayTime = 0;
+      replaySlider.updateDisplay();
+      if (typeof parentContext.setMotionProgress === 'function') {
+        await parentContext.setMotionProgress(0, { syncState: false });
+      }
+      parentContext._updatingReplaySlider = false;
+    }
+  };
+  replayMotionCtrl = parentContext.gui.add(replayMotionAction, 'replayMotion').name('Replay Motion');
+  replayMotionCtrl.hide();
+  parentContext.replayMotionController = replayMotionCtrl;
+  function ensureControlOrdering() {
+    if (!policyController) { return; }
+    if (velocityXCtrl) {
+      insertControllerAfter(velocityXCtrl, policyController);
+    }
+    const replayParent = velocityXCtrl ?? policyController;
+    if (replaySlider) {
+      insertControllerAfter(replaySlider, replayParent);
+    }
+    const lastReference = replaySlider ?? replayParent;
+    if (replayMotionCtrl) {
+      insertControllerAfter(replayMotionCtrl, lastReference);
+    }
+  }
+  ensureControlOrdering();
 
   function updateVelocityControlsVisibility() {
     const isVelocity = parentContext.params.task === 'Velocity';
-    if (isVelocity) { velocityXCtrl.show(); velocityYCtrl.show(); }
-    else { velocityXCtrl.hide(); velocityYCtrl.hide(); }
+    if (isVelocity) { velocityXCtrl.show(); }
+    else { velocityXCtrl.hide(); }
+    ensureControlOrdering();
   }
 
   function setPolicyOptionsForTask(task) {
@@ -281,10 +381,17 @@ export function setupGUI(parentContext) {
   }
   updateVelocityControlsVisibility();
   updateReplayMotionVisibility();
+  if (parentContext.replayControls) {
+    parentContext.replayControls.replayTime = 0;
+    if (parentContext.replayProgressController) {
+      parentContext._updatingReplaySlider = true;
+      parentContext.replayProgressController.updateDisplay();
+      parentContext._updatingReplaySlider = false;
+    }
+  }
 
   // Fix robust behavior: zero command velocity
   parentContext.params.command_vel_x = 0.0;
-  parentContext.params.command_vel_y = 0.0;
   parentContext.params.command_vel_z = 0.0;
   parentContext.params.command_vel_yaw = 0.0;
   parentContext.params.use_setpoint = false;
@@ -415,29 +522,13 @@ export function setupGUI(parentContext) {
   actionInnerHTML += 'Play / Pause<br>';
   keyInnerHTML += 'Space<br>';
 
-  const impulseSeconds = 0.3;
+  const impulseSeconds = 0.45;
   simulationFolder.add({ impulse: () => { parentContext.params["impulse_remain_time"] = impulseSeconds; } }, 'impulse').name('Impulse');
   document.addEventListener('keydown', (event) => {
     if (event.code === 'KeyI') { parentContext.params["impulse_remain_time"] = impulseSeconds; event.preventDefault(); }
   });
   actionInnerHTML += 'Impulse<br>';
   keyInnerHTML += 'I<br>';
-
-  const replayMotionAction = {
-    replayMotion: async () => {
-      if (typeof parentContext.replayMotion === 'function') {
-        await parentContext.replayMotion();
-      }
-    }
-  };
-  replayMotionCtrl = simulationFolder.add(replayMotionAction, 'replayMotion').name('Replay Motion');
-  replayMotionCtrl.hide();
-  parentContext.replayMotionController = replayMotionCtrl;
-  if (typeof parentContext.addPolicyLoadedListener === 'function') {
-    parentContext.addPolicyLoadedListener(() => {
-      updateReplayMotionVisibility();
-    });
-  }
 
 
   // Add reset simulation button.
@@ -450,10 +541,9 @@ export function setupGUI(parentContext) {
     // Use the demo's resetSimulation method if available (properly resets policy state)
     if (typeof parentContext.resetSimulation === 'function') {
       parentContext.resetSimulation();
-    } else {
-      // Fallback to basic reset
-      parentContext.simulation.resetData();
-      parentContext.simulation.forward();
+    } else if (parentContext.mujoco && parentContext.model && parentContext.data) {
+      parentContext.mujoco.mj_resetData(parentContext.model, parentContext.data);
+      parentContext.mujoco.mj_forward(parentContext.model, parentContext.data);
     }
   };
   simulationFolder.add({reset: () => { resetSimulation(); }}, 'reset').name('Reset');
@@ -468,7 +558,7 @@ export function setupGUI(parentContext) {
   // Add joint position displays (read-only, shows actual joint angles)
   // Only show the 23 actuated joints from the policy
   let jointFolder = simulationFolder.addFolder("Joint Positions");
-  const addJointPositions = (model, simulation, params) => {
+  const addJointPositions = (model, data, params) => {
     let jointGUIs = [];
     
     // List of non-actuated joints to exclude (6 joints)
@@ -496,7 +586,7 @@ export function setupGUI(parentContext) {
       
       // Create a params entry for this joint position
       let paramName = name + "_pos";
-      parentContext.params[paramName] = simulation.qpos[qpos_adr];
+      parentContext.params[paramName] = data.qpos[qpos_adr];
       
       // Add GUI controller - make it listen to updates
       let min_val = has_limits ? joint_range[2 * i] : -Math.PI;
@@ -506,20 +596,20 @@ export function setupGUI(parentContext) {
     }
     return jointGUIs;
   };
-  let jointGUIs = addJointPositions(parentContext.model, parentContext.simulation, parentContext.params);
+  let jointGUIs = addJointPositions(parentContext.model, parentContext.data, parentContext.params);
   
   // Update joint positions in the render loop
   parentContext.updateJointPositions = () => {
     for (let jointInfo of jointGUIs) {
-      parentContext.params[jointInfo.paramName] = parentContext.simulation.qpos[jointInfo.qpos_adr];
+      parentContext.params[jointInfo.paramName] = parentContext.data.qpos[jointInfo.qpos_adr];
     }
   };
   
-  parentContext.updateGUICallbacks.push((model, simulation, params) => {
+  parentContext.updateGUICallbacks.push((model, data, params) => {
     for (let jointInfo of jointGUIs) {
       jointInfo.gui.destroy();
     }
-    jointGUIs = addJointPositions(model, simulation, parentContext.params);
+    jointGUIs = addJointPositions(model, data, parentContext.params);
   });
   jointFolder.close();
 
@@ -547,22 +637,17 @@ export function setupGUI(parentContext) {
  * @param {MuJoCoDemo} parent The three.js Scene Object to add the MuJoCo model elements to
  */
 export async function loadSceneFromURL(mujoco, filename, parent) {
-    // Free the old simulation.
-    if (parent.simulation != null) {
-      parent.simulation.free();
-      parent.model      = null;
-      parent.state      = null;
-      parent.simulation = null;
-    }
+    // Free the old data.
+    parent.model = null;
+    parent.data = null;
 
     // Load in the state from XML.
-    parent.model       = mujoco.Model.load_from_xml("/working/"+filename);
-    parent.state       = new mujoco.State(parent.model);
-    parent.simulation  = new mujoco.Simulation(parent.model, parent.state);
+    parent.model = mujoco.MjModel.loadFromXML("/working/" + filename);
+    parent.data  = new mujoco.MjData(parent.model);
 
     let model = parent.model;
-    let state = parent.state;
-    let simulation = parent.simulation;
+    let data = parent.data;
+    const mj = parent.mujoco ?? mujoco;
 
     // Decode the null-terminated string names.
     let textDecoder = new TextDecoder("utf-8");
@@ -639,7 +724,7 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
   } else {
     parent.defaultJpos = new Float32Array(parent.jointNamesIsaac.length);
     for (let i = 0; i < parent.jointNamesIsaac.length; i++) {
-      parent.defaultJpos[i] = parent.simulation.qpos[parent.qpos_adr_isaac[i]];
+      parent.defaultJpos[i] = parent.data.qpos[parent.qpos_adr_isaac[i]];
     }
   }
 
@@ -707,21 +792,21 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
 
       // Set the default geometry. In MuJoCo, this is a sphere.
       let geometry = new THREE.SphereGeometry(size[0] * 0.5);
-      if (type == mujoco.mjtGeom.mjGEOM_PLANE.value) {
+      if (type == mj.mjtGeom.mjGEOM_PLANE.value) {
         // Special handling for plane later.
-      } else if (type == mujoco.mjtGeom.mjGEOM_HFIELD.value) {
+      } else if (type == mj.mjtGeom.mjGEOM_HFIELD.value) {
         // TODO: Implement this.
-      } else if (type == mujoco.mjtGeom.mjGEOM_SPHERE.value) {
+      } else if (type == mj.mjtGeom.mjGEOM_SPHERE.value) {
         geometry = new THREE.SphereGeometry(size[0]);
-      } else if (type == mujoco.mjtGeom.mjGEOM_CAPSULE.value) {
+      } else if (type == mj.mjtGeom.mjGEOM_CAPSULE.value) {
         geometry = new THREE.CapsuleGeometry(size[0], size[1] * 2.0, 20, 20);
-      } else if (type == mujoco.mjtGeom.mjGEOM_ELLIPSOID.value) {
+      } else if (type == mj.mjtGeom.mjGEOM_ELLIPSOID.value) {
         geometry = new THREE.SphereGeometry(1); // Stretch this below
-      } else if (type == mujoco.mjtGeom.mjGEOM_CYLINDER.value) {
+      } else if (type == mj.mjtGeom.mjGEOM_CYLINDER.value) {
         geometry = new THREE.CylinderGeometry(size[0], size[0], size[1] * 2.0);
-      } else if (type == mujoco.mjtGeom.mjGEOM_BOX.value) {
+      } else if (type == mj.mjtGeom.mjGEOM_BOX.value) {
         geometry = new THREE.BoxGeometry(size[0] * 2.0, size[2] * 2.0, size[1] * 2.0);
-      } else if (type == mujoco.mjtGeom.mjGEOM_MESH.value) {
+      } else if (type == mj.mjtGeom.mjGEOM_MESH.value) {
         let meshID = model.geom_dataid[g];
 
         if (!(meshID in meshes)) {
@@ -781,34 +866,37 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
           model.mat_rgba[(matId * 4) + 2],
           model.mat_rgba[(matId * 4) + 3]];
 
-        // Construct Texture from model.tex_data
+        // Construct texture from model.tex_data via texture roles (MuJoCo 3.3.8)
         texture = undefined;
-        let texId = model.mat_texid[matId];
-        if (texId != -1) {
-          let width    = model.tex_width [texId];
-          let height   = model.tex_height[texId];
-          let offset   = model.tex_adr   [texId];
-          let channels = model.tex_nchannel[texId];
-          let texData  = model.tex_data;
-          let rgbaArray = new Uint8Array(width * height * 4);
-          for (let p = 0; p < width * height; p++){
+        const mjNTEXROLE = 10;
+        const mjTEXROLE_RGB = 1;
+        const texId = model.mat_texid[(matId * mjNTEXROLE) + mjTEXROLE_RGB];
+
+        if (texId !== -1) {
+          const width    = model.tex_width [texId];
+          const height   = model.tex_height[texId];
+          const offset   = model.tex_adr   [texId];
+          const channels = model.tex_nchannel[texId];
+          const texData  = model.tex_data;
+          const rgbaArray = new Uint8Array(width * height * 4);
+          for (let p = 0; p < width * height; p++) {
             rgbaArray[(p * 4) + 0] = texData[offset + ((p * channels) + 0)];
             rgbaArray[(p * 4) + 1] = channels > 1 ? texData[offset + ((p * channels) + 1)] : rgbaArray[(p * 4) + 0];
             rgbaArray[(p * 4) + 2] = channels > 2 ? texData[offset + ((p * channels) + 2)] : rgbaArray[(p * 4) + 0];
             rgbaArray[(p * 4) + 3] = channels > 3 ? texData[offset + ((p * channels) + 3)] : 255;
           }
           texture = new THREE.DataTexture(rgbaArray, width, height, THREE.RGBAFormat, THREE.UnsignedByteType);
-          if (texId == 2) {
-            texture.repeat = new THREE.Vector2(100, 100);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
+          if (texId === 2) {
+            texture.repeat = new THREE.Vector2(50, 50);
           } else {
-            texture.repeat = new THREE.Vector2(model.mat_texrepeat[(model.geom_matid[g] * 2) + 0],
-                                               model.mat_texrepeat[(model.geom_matid[g] * 2) + 1]);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
+            const repeatIndex = model.geom_matid[g] * 2;
+            texture.repeat = new THREE.Vector2(
+              model.mat_texrepeat[repeatIndex + 0] ?? 1,
+              model.mat_texrepeat[repeatIndex + 1] ?? 1
+            );
           }
-
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
           texture.needsUpdate = true;
         }
       }
@@ -933,7 +1021,7 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
   
     parent.mujocoRoot = mujocoRoot;
 
-    return [model, state, simulation, bodies, lights]
+    return [model, data, bodies, lights]
 }
 
 /** Downloads the scenes/examples folder to MuJoCo's virtual filesystem

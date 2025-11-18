@@ -73,7 +73,7 @@ export default defineConfig({
         const outDir = join(__dirname, '..', 'humanoid', 'demo');
         
         // Copy MuJoCo WASM files
-        const distDir = join(__dirname, 'dist');
+        const distDir = join(__dirname, 'node_modules', 'mujoco-js', 'dist');
         if (!existsSync(join(outDir, 'dist'))) {
           mkdirSync(join(outDir, 'dist'), { recursive: true });
         }
