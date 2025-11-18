@@ -80,6 +80,7 @@ export class MuJoCoDemo {
       policy: "./examples/checkpoints/g1/balance/balance_deploy_state_projection.yaml",
       policyOnnx: "./examples/checkpoints/g1/balance/balance_policy_state_projection.onnx",
       policyLabel: 'Ours',
+      motionDataset: null,
       command_vel_x: 0.0,
       command_vel_y: 0.0,
       command_vel_z: 0.0,
@@ -105,6 +106,11 @@ export class MuJoCoDemo {
     this.inferenceGen = 0;
     this.adapt_hx = new Float32Array(128).fill(0);
     this.rpy = new THREE.Euler(0, 0, 0);
+    this.motionObservationsPresent = false;
+    this.observationsReady = false;
+    this.policyLoading = false;
+    this.policyLoadedListeners = [];
+    this.motionDatasetOverride = null;
 
     this.container = document.createElement( 'div' );
     document.body.appendChild( this.container );
@@ -208,6 +214,13 @@ export class MuJoCoDemo {
     // Reset observation history by reinitializing observations
     if (this.observations && this.observations.obs) {
       for (const obs of this.observations.obs) {
+        if (typeof obs.reset === 'function') {
+          try {
+            obs.reset();
+          } catch (err) {
+            console.warn('[Reset] observation reset threw error', err);
+          }
+        }
         if (obs.history) {
           // Re-initialize history with current values (all zeros since we reset)
           obs.history_initialized = false;
@@ -231,6 +244,48 @@ export class MuJoCoDemo {
     console.log("[Reset] complete");
   }
 
+  addPolicyLoadedListener(listener) {
+    if (typeof listener !== 'function') {
+      return;
+    }
+    if (!this.policyLoadedListeners.includes(listener)) {
+      this.policyLoadedListeners.push(listener);
+    }
+  }
+
+  notifyPolicyLoaded() {
+    for (const listener of this.policyLoadedListeners) {
+      try {
+        listener(this);
+      } catch (err) {
+        console.warn('[PolicyLoadedListener] listener threw error', err);
+      }
+    }
+  }
+
+  async replayMotion() {
+    if (!this.observations) {
+      return false;
+    }
+    let replayed = false;
+    for (const obsList of Object.values(this.observations)) {
+      for (const obsInstance of obsList) {
+        if (typeof obsInstance?.replayMotion === 'function') {
+          try {
+            const result = await obsInstance.replayMotion();
+            replayed = replayed || Boolean(result);
+          } catch (err) {
+            console.warn('[ReplayMotion] observation replay failed', err);
+          }
+        }
+      }
+    }
+    if (!replayed) {
+      console.warn('[ReplayMotion] no motion-enabled observations available to replay');
+    }
+    return replayed;
+  }
+
   async loadPolicy(policyPath, onnxOverride = null) {
     console.log("[LoadPolicy] begin", policyPath, onnxOverride ? `(onnx override: ${onnxOverride})` : '');
     
@@ -241,12 +296,22 @@ export class MuJoCoDemo {
       }
 
       let config;
+      this.policyLoading = true;
+      this.observationsReady = false;
+      this.observations = {};
+      this.motionObservationsPresent = false;
+      this.policy = null;
+      this.inputDict = {};
+      const motionOverride = this.params.motionDataset ?? this.motionDatasetOverride ?? null;
     
     // Check if it's a YAML or JSON file
     if (policyPath.endsWith('.yaml') || policyPath.endsWith('.yml')) {
       // Parse YAML and convert to policy config
       console.log("[LoadPolicy] parsing YAML", policyPath);
       const yamlConfig = await parseYAMLConfig(policyPath);
+      if (motionOverride) {
+        yamlConfig.__motionDataset = motionOverride;
+      }
       
       // Determine ONNX path based on YAML filename
       const onnxPath = onnxOverride;
@@ -263,6 +328,7 @@ export class MuJoCoDemo {
       const response = await fetch(policyPath);
       config = await response.json();
     }
+    this.motionDatasetOverride = motionOverride;
 
     // Initialize ONNX model (defer assigning to this.policy until session is ready)
     const policy = new ONNXModule(config.onnx);
@@ -288,7 +354,7 @@ export class MuJoCoDemo {
     this.actionBuffer = new Array(4).fill().map(() => new Float32Array(this.numActions).fill(0));
 
     // Helper function to create observation instance
-    const createObservation = (obsConfig) => {
+    const createObservation = async (obsConfig) => {
       const ObsClass = Observations[obsConfig.name];
       if (!ObsClass) {
         throw new Error(`Unknown observation type: ${obsConfig.name}`);
@@ -302,15 +368,31 @@ export class MuJoCoDemo {
         kwargs.joint_names = this.jointNamesIsaac;
       }
 
-      return new ObsClass(this.model, this.simulation, this, kwargs);
+      const instance = new ObsClass(this.model, this.simulation, this, kwargs);
+      if (instance && instance.ready && typeof instance.ready.then === 'function') {
+        try {
+          await instance.ready;
+        } catch (readyError) {
+          console.warn('[LoadPolicy] observation readiness promise rejected', readyError);
+        }
+      }
+      return instance;
     };
 
     // Set up observations based on config
     this.observations = {};
     console.log("[LoadPolicy] building observations");
     for (const [key, obsList] of Object.entries(config.obs_config)) {
-      this.observations[key] = obsList.map(obsConfig => createObservation(obsConfig));
+      const instances = [];
+      for (const obsConfig of obsList) {
+        instances.push(await createObservation(obsConfig));
+      }
+      this.observations[key] = instances;
     }
+    this.motionObservationsPresent = Object.values(this.observations).some(obsList =>
+      obsList.some(obsInstance => typeof obsInstance?.replayMotion === 'function')
+    );
+    this.observationsReady = true;
 
     // Handle per-joint stiffness/damping arrays or single values
     if (config.stiffness_array && config.stiffness_array.length > 0) {
@@ -370,10 +452,13 @@ export class MuJoCoDemo {
       // Reset recurrent inputs and invalidate any in-flight inference
       this.inputDict = this.policy.initInput();
       this.inferenceGen++;
+    this.policyLoading = false;
+    this.notifyPolicyLoaded();
       console.log("[LoadPolicy] complete");
     } catch (error) {
       console.error("[LoadPolicy] ERROR", error);
       console.error("Stack trace:", error.stack);
+      this.policyLoading = false;
       throw error; // Re-throw to see it in console
     }
   }
@@ -431,6 +516,19 @@ export class MuJoCoDemo {
                                    (this.simStepCount % this.control_decimation === 0);
         
         if (shouldRunInference) {
+          if (this.policyLoading || !this.observationsReady) {
+            // Skip inference until policy + observations are ready
+            if ((this.simStepCount % 100) === 0) {
+              console.warn('[Inference] policy not ready; skipping step');
+            }
+            continue;
+          }
+          if (!this.observations || !Array.isArray(this.observations.obs) || !this.observations.obs.length) {
+            if ((this.simStepCount % 200) === 0) {
+              console.warn('[Inference] observations unavailable; skipping step');
+            }
+            continue;
+          }
           // Update base quat/euler
           const q = this.simulation.qpos.subarray(3, 7);
           this.tmpQuat.set(q[1], q[2], q[3], q[0]);

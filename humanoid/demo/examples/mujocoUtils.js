@@ -48,7 +48,19 @@ export function setupGUI(parentContext) {
         yaml: "./examples/checkpoints/g1/velocity/velocity_deploy_baseline.yaml",
         onnx: "./examples/checkpoints/g1/velocity/velocity_policy_baseline.onnx",
       }
-    }
+    },
+    Squat: {
+      "Ours": {
+        yaml: "./examples/checkpoints/g1/squat/squat_deploy_state_projection.yaml",
+        onnx: "./examples/checkpoints/g1/squat/squat_policy_state_projection.onnx",
+        motion: "./examples/checkpoints/g1/squat/squat_29dof.csv",
+      },
+      "Baseline": {
+        yaml: "./examples/checkpoints/g1/squat/squat_deploy_baseline.yaml",
+        onnx: "./examples/checkpoints/g1/squat/squat_policy_baseline.onnx",
+        motion: "./examples/checkpoints/g1/squat/squat_29dof.csv",
+      }
+    },
   };
 
   const getPolicyLabelsForTask = (task) => {
@@ -69,6 +81,15 @@ export function setupGUI(parentContext) {
   };
 
   let policyController;
+  let replayMotionCtrl;
+
+  const updateReplayMotionVisibility = () => {
+    if (!replayMotionCtrl) { return; }
+    const isSquatTask = parentContext.params.task === 'Squat';
+    const hasMotionReplay = !!parentContext.motionObservationsPresent;
+    if (isSquatTask && hasMotionReplay) { replayMotionCtrl.show(); }
+    else { replayMotionCtrl.hide(); }
+  };
 
   async function applyPolicySelection(label, { fromController = false } = {}) {
     const task = parentContext.params.task;
@@ -87,7 +108,7 @@ export function setupGUI(parentContext) {
       console.warn('[Policy Change] missing entry for task', task, 'label', normalizedLabel);
       return;
     }
-    const { yaml: yamlPath, onnx: onnxPath } = entry;
+    const { yaml: yamlPath, onnx: onnxPath, motion: motionPath } = entry;
     if (!yamlPath || !onnxPath) {
       console.warn('[Policy Change] missing YAML/ONNX paths for task', task, 'label', normalizedLabel, entry);
       return;
@@ -96,6 +117,8 @@ export function setupGUI(parentContext) {
     parentContext.params.policyLabel = normalizedLabel;
     parentContext.params.policy = yamlPath;
     parentContext.params.policyOnnx = onnxPath;
+    parentContext.params.motionDataset = motionPath ?? null;
+    parentContext.motionDatasetOverride = motionPath ?? null;
     if (!fromController && policyController) {
       policyController.updateDisplay();
     }
@@ -112,6 +135,7 @@ export function setupGUI(parentContext) {
       console.log('[Policy Change] calling loadPolicy', yamlPath);
       await parentContext.loadPolicy(yamlPath, onnxPath);
       console.log('[Policy Change] SUCCESS loaded policy', yamlPath, onnxPath);
+      updateReplayMotionVisibility();
     } catch (e) {
       console.error('[Policy Change] ERROR while switching policy', e);
     }
@@ -120,6 +144,7 @@ export function setupGUI(parentContext) {
   const taskController = parentContext.gui.add(parentContext.params, 'task', {
     "Balance": "Balance",
     "Velocity": "Velocity",
+    "Squat": "Squat",
   }).name('Task');
 
   const ensurePolicyControllerPosition = () => {
@@ -175,6 +200,8 @@ export function setupGUI(parentContext) {
       if (initial) {
         parentContext.params.policy = initial.yaml;
         parentContext.params.policyOnnx = initial.onnx;
+        parentContext.params.motionDataset = initial.motion ?? null;
+        parentContext.motionDatasetOverride = initial.motion ?? null;
       }
     }
   }
@@ -239,6 +266,7 @@ export function setupGUI(parentContext) {
     await applyPolicySelection(label, { fromController: false });
     console.log('[Task Change] policy loaded for task', task);
     updateVelocityControlsVisibility();
+    updateReplayMotionVisibility();
   });
 
   // Initialize defaults according to current task
@@ -247,9 +275,12 @@ export function setupGUI(parentContext) {
     const initialEntry = policyMap[parentContext.params.task][initialLabel];
     parentContext.params.policy = initialEntry?.yaml;
     parentContext.params.policyOnnx = initialEntry?.onnx;
+    parentContext.params.motionDataset = initialEntry?.motion ?? null;
+    parentContext.motionDatasetOverride = initialEntry?.motion ?? null;
     policyController.updateDisplay();
   }
   updateVelocityControlsVisibility();
+  updateReplayMotionVisibility();
 
   // Fix robust behavior: zero command velocity
   parentContext.params.command_vel_x = 0.0;
@@ -391,6 +422,22 @@ export function setupGUI(parentContext) {
   });
   actionInnerHTML += 'Impulse<br>';
   keyInnerHTML += 'I<br>';
+
+  const replayMotionAction = {
+    replayMotion: async () => {
+      if (typeof parentContext.replayMotion === 'function') {
+        await parentContext.replayMotion();
+      }
+    }
+  };
+  replayMotionCtrl = simulationFolder.add(replayMotionAction, 'replayMotion').name('Replay Motion');
+  replayMotionCtrl.hide();
+  parentContext.replayMotionController = replayMotionCtrl;
+  if (typeof parentContext.addPolicyLoadedListener === 'function') {
+    parentContext.addPolicyLoadedListener(() => {
+      updateReplayMotionVisibility();
+    });
+  }
 
 
   // Add reset simulation button.
@@ -766,17 +813,45 @@ export async function loadSceneFromURL(mujoco, filename, parent) {
         }
       }
 
-      // Create a new material for each geom to avoid cross-contamination
-      let currentMaterial = new THREE.MeshPhysicalMaterial({
+      const materialParams = {
         color: new THREE.Color(color[0], color[1], color[2]),
         transparent: color[3] < 1.0,
-        opacity: color[3]/255.,
-        specularIntensity: model.geom_matid[g] != -1 ?       model.mat_specular   [model.geom_matid[g]] : undefined,
-        reflectivity     : model.geom_matid[g] != -1 ?       model.mat_reflectance[model.geom_matid[g]] : undefined,
-        roughness        : model.geom_matid[g] != -1 ? 1.0 - model.mat_shininess  [model.geom_matid[g]] * -1.0 : undefined,
-        metalness        : model.geom_matid[g] != -1 ?       model.mat_metallic   [model.geom_matid[g]] : undefined,
-        map              : texture
-      });
+        opacity: color[3] / 255.0
+      };
+
+      if (texture) {
+        materialParams.map = texture;
+      }
+
+      const materialId = model.geom_matid[g];
+      if (materialId !== -1) {
+        const specular = model.mat_specular?.[materialId];
+        const reflectance = model.mat_reflectance?.[materialId];
+        const shininess = model.mat_shininess?.[materialId];
+        const metallic = model.mat_metallic?.[materialId];
+
+        if (specular !== undefined) {
+          materialParams.specularIntensity = specular;
+        }
+        if (reflectance !== undefined) {
+          materialParams.reflectivity = reflectance;
+        }
+        if (shininess !== undefined) {
+          materialParams.roughness = 1.0 - shininess;
+        }
+        if (metallic !== undefined) {
+          materialParams.metalness = metallic;
+        }
+      }
+
+      for (const key of Object.keys(materialParams)) {
+        if (materialParams[key] === undefined) {
+          delete materialParams[key];
+        }
+      }
+
+      // Create a new material for each geom to avoid cross-contamination
+      const currentMaterial = new THREE.MeshPhysicalMaterial(materialParams);
 
       let mesh = new THREE.Mesh();
       if (type == 0) {

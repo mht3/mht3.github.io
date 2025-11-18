@@ -8,6 +8,14 @@ export async function parseYAMLConfig(yamlPath) {
   const text = await response.text();
   
   const config = {
+    __sourcePath: yamlPath,
+    __baseDir: (() => {
+      const lastSlash = yamlPath.lastIndexOf('/');
+      if (lastSlash === -1) {
+        return '.';
+      }
+      return yamlPath.slice(0, lastSlash);
+    })(),
     joint_ids_map: [],
     step_dt: 0.02,
     stiffness: [],
