@@ -12,8 +12,8 @@ matt:
     Hi! I'm a first year PhD student in the computer science and engineering department at UC San Diego, advised by Professor [Sean Gao](https://scungao.github.io/). Previously, I studied aerospace engineering with a minor in computer science at the University of Illinois
     Urbana-Champaign researching under Professor [Huy Tran](https://huytrtran.github.io/).
 
-
-    I have a broad interest in science and physical applications of sequential decision making problems including reinforcement learning and learning from imperfect experts. I am particularly interested in exploring how ideas from control theory and physics can improve learning algorithms for high dimensional systems.
+    I have a broad interest in data-driven control for scientific and physical applications, including reinforcement learning and learning from imperfect experts. I am particularly interested in how ideas from control theory and physics can improve the safety and robustness of learning algorithms for high-dimensional systems.
+  
   # This photo will be used in the about section
   # picture:
   #   path:            https://via.placeholder.com/128x128
