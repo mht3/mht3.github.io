@@ -3,7 +3,7 @@
 # Change `author1` to your shortname.
 matt:
   name:              Matt Taylor
-  email:             matttaylor@ucsd.edu
+  email:             mat028@ucsd.edu
 
   # Used at the bottom of each page and at the top of the `about` layout
   # Markdown enabled, can use multiple paragraphs (enabled by `|`)
@@ -27,7 +27,7 @@ matt:
   # Comment/uncommet to show/hide
   # Rearrange to change the order in which they appear
   social:
-    email:           matttaylor@ucsd.edu
+    email:           mat028@ucsd.edu
     google-scholar:  9e2G0_0AAAAJ&hl=en
     linkedin:        matthtaylor
     github:          mht3
