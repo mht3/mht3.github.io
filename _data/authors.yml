@@ -9,11 +9,10 @@ matt:
   # Markdown enabled, can use multiple paragraphs (enabled by `|`)
     
   about:
-    Hi! I'm a first year PhD student in the computer science and engineering department at UC San Diego, advised by Professor [Sean Gao](https://scungao.github.io/). Previously, I studied aerospace engineering with a minor in computer science at the University of Illinois
+    Hi! I'm a PhD student in the computer science and engineering department at UC San Diego, advised by Professor [Sean Gao](https://scungao.github.io/). Previously, I studied aerospace engineering with a minor in computer science at the University of Illinois
     Urbana-Champaign researching under Professor [Huy Tran](https://huytrtran.github.io/).
 
-
-    I have a broad interest in data-driven control for scientific and physical applications, including reinforcement learning and learning from imperfect experts. I am particularly interested in how ideas from control theory and physics can improve the safety and robustness of learning algorithms for high-dimensional systems.
+    I work broadly in data-driven control, dynamical systems, and machine learning for scientific and physical applications, with a specific emphasis on leveraging ideas from control theory and physics to improve the robustness of reinforcement learning algorithms for high-dimensional systems.
   
   # This photo will be used in the about section
   # picture:
