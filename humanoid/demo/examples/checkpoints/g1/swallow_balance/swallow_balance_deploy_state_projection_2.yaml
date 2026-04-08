@@ -40,11 +40,6 @@ observations:
     clip: null
     scale: [1.0, 1.0, 1.0]
     history_length: 1
-  projected_gravity:
-    params: {}
-    clip: null
-    scale: [1.0, 1.0, 1.0]
-    history_length: 1
   joint_pos_rel:
     params: {}
     clip: null
