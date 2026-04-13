@@ -598,15 +598,18 @@ class G1YAMLObs {
         const jointPosFull = this.motionLoader.joint_pos();
         const jointVelFull = this.motionLoader.joint_vel();
         const jointIdsMap = this.yaml_config.joint_ids_map || [];
+        // When CSV joint count matches num_joints (e.g. 23dof CSV), joints are
+        // already in actuated order — use direct indexing instead of joint_ids_map.
+        const directIndex = (jointPosFull.length === this.num_joints);
 
         for (let i = 0; i < this.num_joints; i++) {
-          const isaacIndex = jointIdsMap[i];
-          if (isaacIndex === undefined || isaacIndex < 0 || isaacIndex >= jointPosFull.length) {
-            console.warn(`motion_command: invalid joint index mapping for action ${i} -> ${isaacIndex}`);
+          const idx = directIndex ? i : jointIdsMap[i];
+          if (idx === undefined || idx < 0 || idx >= jointPosFull.length) {
+            console.warn(`motion_command: invalid joint index mapping for action ${i} -> ${idx}`);
             continue;
           }
-          result[i] = jointPosFull[isaacIndex];
-          result[i + this.num_joints] = jointVelFull[isaacIndex];
+          result[i] = jointPosFull[idx];
+          result[i + this.num_joints] = jointVelFull[idx];
         }
 
         for (let i = 0; i < result.length; i++) {

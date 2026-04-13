@@ -77,12 +77,12 @@ export function setupGUI(parentContext) {
       "Ours": {
         yaml: "./examples/checkpoints/g1/swallow_balance/swallow_balance_deploy_state_projection.yaml",
         onnx: "./examples/checkpoints/g1/swallow_balance/swallow_balance_policy_state_projection.onnx",
-        motion: "./examples/checkpoints/g1/swallow_balance/swallow_balance_29dof.csv",
+        motion: "./examples/checkpoints/g1/swallow_balance/swallow_balance_23dof.csv",
       },
       "Baseline": {
         yaml: "./examples/checkpoints/g1/swallow_balance/swallow_balance_deploy_baseline.yaml",
         onnx: "./examples/checkpoints/g1/swallow_balance/swallow_balance_policy_baseline.onnx",
-        motion: "./examples/checkpoints/g1/swallow_balance/swallow_balance_29dof.csv",
+        motion: "./examples/checkpoints/g1/swallow_balance/swallow_balance_23dof.csv",
       }
     },
   };

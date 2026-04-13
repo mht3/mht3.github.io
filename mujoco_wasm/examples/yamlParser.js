@@ -30,6 +30,7 @@ export async function parseYAMLConfig(yamlPath) {
   let currentSection = null;
   let currentObsName = null;
   let indentStack = [];
+  let parsingMultilineParams = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -56,29 +57,25 @@ export async function parseYAMLConfig(yamlPath) {
       currentSection = 'observations';
     } else if (currentSection === 'observations' && !trimmed.includes(':') && !trimmed.startsWith('-')) {
       // Skip
-    } else if (currentSection === 'observations' && trimmed.match(/^[a-z_]+:$/)) {
-      // New observation term
-      currentObsName = trimmed.slice(0, -1);
-      config.observations[currentObsName] = {
-        params: {},
-        clip: null,
-        scale: [],
-        history_length: 1
-      };
-    } else if (currentSection === 'observations' && currentObsName) {
-      // Parse observation properties
+    } else if (currentSection === 'observations' && currentObsName &&
+               (trimmed.startsWith('params:') || trimmed.startsWith('clip:') ||
+                trimmed.startsWith('scale:') || trimmed.startsWith('history_length:'))) {
+      // Parse observation properties — checked BEFORE new-term regex so that
+      // bare "params:" isn't mistaken for a new observation term.
+      parsingMultilineParams = false;
       if (trimmed.startsWith('params:')) {
         const paramsValue = trimmed.substring(7).trim();
         if (paramsValue === '{}') {
           config.observations[currentObsName].params = {};
         } else if (paramsValue.startsWith('{')) {
-          // Parse inline dict like {command_name: base_velocity}
           const match = paramsValue.match(/\{([^:]+):\s*([^}]+)\}/);
           if (match) {
             const key = match[1].trim();
             const val = match[2].trim();
             config.observations[currentObsName].params[key] = val;
           }
+        } else {
+          parsingMultilineParams = true;
         }
       } else if (trimmed.startsWith('clip:')) {
         const val = trimmed.split(':')[1].trim();
@@ -88,6 +85,25 @@ export async function parseYAMLConfig(yamlPath) {
       } else if (trimmed.startsWith('history_length:')) {
         config.observations[currentObsName].history_length = parseInt(trimmed.split(':')[1].trim());
       }
+    } else if (currentSection === 'observations' && parsingMultilineParams && currentObsName &&
+               trimmed.includes(':') && !trimmed.match(/^[a-z_]+:$/)) {
+      // Multi-line params sub-property like "command_name: motion"
+      const colonIdx = trimmed.indexOf(':');
+      const key = trimmed.substring(0, colonIdx).trim();
+      const val = trimmed.substring(colonIdx + 1).trim();
+      config.observations[currentObsName].params[key] = val;
+    } else if (currentSection === 'observations' && trimmed.match(/^[a-z_]+:$/)) {
+      // New observation term
+      parsingMultilineParams = false;
+      currentObsName = trimmed.slice(0, -1);
+      config.observations[currentObsName] = {
+        params: {},
+        clip: null,
+        scale: [],
+        history_length: 1
+      };
+    } else if (currentSection === 'observations' && currentObsName) {
+      parsingMultilineParams = false;
     } else if (currentSection === 'actions') {
       if (trimmed === 'JointPositionAction:') {
         config.actions.JointPositionAction = {
@@ -167,13 +183,16 @@ export function yamlConfigToPolicyConfig(yamlConfig, onnxPath) {
   
   const numJoints = yamlConfig.actions.JointPositionAction.scale.length;
   
-  // Map stiffness and damping according to joint_ids_map
+  // Map stiffness and damping according to joint_ids_map.
+  // When arrays are already in action-space order (length == numJoints, e.g. mjlab),
+  // index directly. Otherwise use joint_ids_map (Isaac Lab 29-dof convention).
   const stiffness_array = [];
   const damping_array = [];
+  const directKpKd = (yamlConfig.stiffness.length === numJoints);
   for (let i = 0; i < numJoints; i++) {
-    const joint_idx = yamlConfig.joint_ids_map[i];
-    stiffness_array.push(yamlConfig.stiffness[joint_idx]);
-    damping_array.push(yamlConfig.damping[joint_idx]);
+    const idx = directKpKd ? i : yamlConfig.joint_ids_map[i];
+    stiffness_array.push(yamlConfig.stiffness[idx]);
+    damping_array.push(yamlConfig.damping[idx]);
   }
   
   console.log('YAML Config: obs_size=' + obsSize + ', num_joints=' + numJoints);
