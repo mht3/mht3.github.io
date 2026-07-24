@@ -1,0 +1,14 @@
+---
+layout:                 about
+title:                  Blog
+description: >
+  Posts about research, projects, and other things I'm working on.
+---
+
+{% for post in site.posts %}
+<div class="blogitem">
+  <div class="blogdate">{{ post.date | date: "%B %-d, %Y" }}</div>
+  <div class="blogtitle"><a href="{{ post.url | relative_url }}">{{ post.title }}</a></div>
+  <div class="blogdescription">{{ post.description }}</div>
+</div>
+{% endfor %}

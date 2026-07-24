@@ -178,6 +178,38 @@ details[open] summary {
   margin-bottom: 1em;
 }
 
+/* Blog listing */
+.blogitem {
+  margin: 2.5em 0;
+  line-height: 1.4em;
+}
+
+.blogdate {
+  font-size: 85%;
+  color: grey;
+  margin-bottom: 0.3em;
+}
+
+.blogtitle {
+  font-weight: bold;
+  font-size: 110%;
+  margin-bottom: 0.4em;
+}
+
+.blogtitle a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.blogtitle a:hover {
+  text-decoration: underline;
+}
+
+.blogdescription {
+  font-size: 95%;
+  line-height: 1.4em;
+}
+
 /* Mobile responsive styles for publications */
 @media (max-width: 768px) {
   .publication-item {
