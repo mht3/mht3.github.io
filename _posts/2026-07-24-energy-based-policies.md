@@ -15,11 +15,16 @@ noindex:                false
 </div>
 
 
-Code: [github.com/mht3/ebp](https://github.com/mht3/ebp/)
 
 $$
 \pi(a \mid s) \propto \exp(-E_\theta(s, a))
 $$
+
+
+## Code
+
+Code for this blog is available here: [github.com/mht3/ebp](https://github.com/mht3/ebp/)
+
 
 ## References
 
@@ -27,48 +32,3 @@ $$
 2. Sumeet Singh, Stephen Tu, and Vikas Sindhwani. "Revisiting Energy Based Models as Policies: Ranking Noise Contrastive Estimation and Interpolating Energy Models." arXiv:2309.05803, 2023. [[arXiv]](https://arxiv.org/abs/2309.05803)
 3. Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burchfiel, Russ Tedrake, and Shuran Song. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion." arXiv:2303.04137, 2024. [[arXiv]](https://arxiv.org/abs/2303.04137)
 4. Kevin Zakka. "A PyTorch Implementation of Implicit Behavioral Cloning." Version 0.0.1, 2021. [[GitHub]](https://github.com/kevinzakka/ibc)
-
-<details markdown="1">
-<summary>BibTeX</summary>
-
-```bibtex
-@misc{florence2021implicit,
-    title = {Implicit Behavioral Cloning},
-    author = {Pete Florence and Corey Lynch and Andy Zeng and Oscar Ramirez and Ayzaan Wahid and Laura Downs and Adrian Wong and Johnny Lee and Igor Mordatch and Jonathan Tompson},
-    year = {2021},
-    eprint = {2109.00137},
-    archivePrefix = {arXiv},
-    primaryClass = {cs.RO}
-}
-
-@misc{singh2023revisitingenergybasedmodels,
-      title={Revisiting Energy Based Models as Policies: Ranking Noise Contrastive Estimation and Interpolating Energy Models}, 
-      author={Sumeet Singh and Stephen Tu and Vikas Sindhwani},
-      year={2023},
-      eprint={2309.05803},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2309.05803}, 
-}
-
-@misc{chi2024diffusionpolicyvisuomotorpolicy,
-      title={Diffusion Policy: Visuomotor Policy Learning via Action Diffusion}, 
-      author={Cheng Chi and Zhenjia Xu and Siyuan Feng and Eric Cousineau and Yilun Du and Benjamin Burchfiel and Russ Tedrake and Shuran Song},
-      year={2024},
-      eprint={2303.04137},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2303.04137}, 
-}
-
-@software{zakka2021ibc,
-    author = {Zakka, Kevin},
-    month = {10},
-    title = {{A PyTorch Implementation of Implicit Behavioral Cloning}},
-    url = {https://github.com/kevinzakka/ibc},
-    version = {0.0.1},
-    year = {2021}
-}
-```
-
-</details>
