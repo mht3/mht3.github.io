@@ -144,11 +144,11 @@ defaults:
       layout:          plain
       sitemap:         false
 
-  # # You can use the following to enable comments on all posts.
-  # - scope:
-  #     type:            posts
-  #   values:
-  #     comments:        true
+  # You can use the following to enable comments on all posts.
+  - scope:
+      type:            posts
+    values:
+      comments:        true
 
   # `jekyll-seo-tag` will mark collection outputs as `BlogPosting`,
   # but we want them to be `WebPage`s:
@@ -183,13 +183,18 @@ google_analytics:      G-SLLZKTEGX9
 
 # google_analytics:       '6505820236'
 
+# Disqus shortname, used to enable comments on posts.
+# Verify this matches the shortname under Settings > General in your Disqus admin console:
+# https://matthtaylor.disqus.com/admin/settings/general/
+disqus:                 matthtaylor
+
 # Hydejack Settings
 # ----------------------------------------------------------------------------------------
 # These settings are specific to Hydejack.
 
 hydejack:
   # Configure the order of complementary content on blog posts
-  post_addons:         [about, newsletter, related, random, comments]
+  post_addons:         [comments]
 
   # Configure the order of complementary content on project pages
   project_addons:      [about, newsletter, other, comments]
