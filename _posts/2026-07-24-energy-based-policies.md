@@ -1,11 +1,18 @@
 ---
 layout:                 post
 title:                  "Energy Based Policies"
+subtitle:               >
+  Using energy-based models to represent policies in control and the benefit compared to other commonly used models.
 noindex:                false
 ---
 
+<p class="post-subtitle">{{ page.subtitle }}</p>
+
+<div class="post-figure" markdown="1">
 ![Figure 1: Visualization of different types of policies.](/assets/posts/ebp_teaser.png)
+
 **Figure 1**: *Visualization of different types of policies. [(source)](https://arxiv.org/abs/2303.04137)*
+</div>
 
 
 Code: [github.com/mht3/ebp](https://github.com/mht3/ebp/)

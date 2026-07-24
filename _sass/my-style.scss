@@ -205,6 +205,25 @@ details[open] summary {
   line-height: 1.4em;
 }
 
+/* Post subtitle (shown under the title, kept separate from the SEO description) */
+.post-subtitle {
+  color: grey;
+  font-size: 110%;
+  margin-top: -0.5em;
+  margin-bottom: 1.5em;
+}
+
+/* Centered figure + caption within a post */
+.post-figure {
+  text-align: center;
+  margin: 2em 0;
+}
+
+.post-figure img {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Mobile responsive styles for publications */
 @media (max-width: 768px) {
   .publication-item {
