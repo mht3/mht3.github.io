@@ -1,8 +1,6 @@
 ---
 layout:                 post
 title:                  "Energy Based Policies"
-description:            >
-  Using energy-based models to represent policies in control and the benefit compared to other commonly used models.
 noindex:                false
 ---
 
