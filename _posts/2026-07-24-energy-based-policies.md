@@ -4,6 +4,10 @@ title:                  "Energy Based Policies"
 noindex:                false
 ---
 
+![Figure 1: Visualization of different types of policies.](/assets/posts/ebp_teaser.png)
+**Figure 1**: *Visualization of different types of policies. [(source)](https://arxiv.org/abs/2303.04137)*
+
+
 Code: [github.com/mht3/ebp](https://github.com/mht3/ebp/)
 
 $$
@@ -13,6 +17,9 @@ $$
 ## References
 
 1. Pete Florence, Corey Lynch, Andy Zeng, Oscar Ramirez, Ayzaan Wahid, Laura Downs, Adrian Wong, Johnny Lee, Igor Mordatch, and Jonathan Tompson. "Implicit Behavioral Cloning." arXiv:2109.00137, 2021. [[arXiv]](https://arxiv.org/abs/2109.00137)
+2. Sumeet Singh, Stephen Tu, and Vikas Sindhwani. "Revisiting Energy Based Models as Policies: Ranking Noise Contrastive Estimation and Interpolating Energy Models." arXiv:2309.05803, 2023. [[arXiv]](https://arxiv.org/abs/2309.05803)
+3. Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burchfiel, Russ Tedrake, and Shuran Song. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion." arXiv:2303.04137, 2024. [[arXiv]](https://arxiv.org/abs/2303.04137)
+4. Kevin Zakka. "A PyTorch Implementation of Implicit Behavioral Cloning." Version 0.0.1, 2021. [[GitHub]](https://github.com/kevinzakka/ibc)
 
 <details markdown="1">
 <summary>BibTeX</summary>
@@ -26,16 +33,7 @@ $$
     archivePrefix = {arXiv},
     primaryClass = {cs.RO}
 }
-```
 
-</details>
-
-2. Sumeet Singh, Stephen Tu, and Vikas Sindhwani. "Revisiting Energy Based Models as Policies: Ranking Noise Contrastive Estimation and Interpolating Energy Models." arXiv:2309.05803, 2023. [[arXiv]](https://arxiv.org/abs/2309.05803)
-
-<details markdown="1">
-<summary>BibTeX</summary>
-
-```bibtex
 @misc{singh2023revisitingenergybasedmodels,
       title={Revisiting Energy Based Models as Policies: Ranking Noise Contrastive Estimation and Interpolating Energy Models}, 
       author={Sumeet Singh and Stephen Tu and Vikas Sindhwani},
@@ -45,16 +43,17 @@ $$
       primaryClass={cs.RO},
       url={https://arxiv.org/abs/2309.05803}, 
 }
-```
 
-</details>
+@misc{chi2024diffusionpolicyvisuomotorpolicy,
+      title={Diffusion Policy: Visuomotor Policy Learning via Action Diffusion}, 
+      author={Cheng Chi and Zhenjia Xu and Siyuan Feng and Eric Cousineau and Yilun Du and Benjamin Burchfiel and Russ Tedrake and Shuran Song},
+      year={2024},
+      eprint={2303.04137},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2303.04137}, 
+}
 
-3. Kevin Zakka. "A PyTorch Implementation of Implicit Behavioral Cloning." Version 0.0.1, 2021. [[GitHub]](https://github.com/kevinzakka/ibc)
-
-<details markdown="1">
-<summary>BibTeX</summary>
-
-```bibtex
 @software{zakka2021ibc,
     author = {Zakka, Kevin},
     month = {10},
