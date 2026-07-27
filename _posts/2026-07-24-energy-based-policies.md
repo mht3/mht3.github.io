@@ -14,7 +14,25 @@ noindex:                false
 **Figure 1**: *Visualization of different types of policies. [(source)](https://arxiv.org/abs/2303.04137)*
 </div>
 
+## Tasks
 
+### Moons Toy Dataset
+
+| MSE | IBC | R-NCE |
+|-----|-----|-----|
+|<img src="/assets/posts/ebc_blog_assets/mse_make_moons_predictions.png" width="250" height="250"/>|<img src="/assets/posts/ebc_blog_assets/ibc_make_moons_predictions.png" width="250" height="250"/>|<img src="/assets/posts/ebc_blog_assets/rnce_make_moons_predictions.png" width="250" height="250"/>|
+
+<div class="post-figure" markdown="1">
+<img src="/assets/posts/ebc_blog_assets/make_moons_energy_slice.gif" width="600" height="245"/>
+</div>
+
+<div class="post-figure" markdown="1">
+<img src="/assets/posts/ebc_blog_assets/make_moons_rnce_energy_slice.gif" width="600" height="245"/>
+</div>
+
+### Coordinate Regression
+
+### Push T
 
 $$
 \pi(a \mid s) \propto \exp(-E_\theta(s, a))
