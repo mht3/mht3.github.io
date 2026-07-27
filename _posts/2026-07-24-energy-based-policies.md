@@ -32,7 +32,29 @@ noindex:                false
 
 ### Coordinate Regression
 
+|             | MSE | IBC | R-NCE |
+|-------------|-----|-----|-------|
+| 10 examples |<img src="/assets/posts/ebc_blog_assets/mse_coordinate_regression_n_10_seed_0.png" width="300" height="225"/>|<img src="/assets/posts/ebc_blog_assets/ibc_coordinate_regression_n_10_seed_0.png" width="300" height="225"/>|<img src="/assets/posts/ebc_blog_assets/rnce_coordinate_regression_n_10_seed_0.png" width="300" height="225"/>|
+| 30 examples |<img src="/assets/posts/ebc_blog_assets/mse_coordinate_regression_n_30_seed_0.png" width="300" height="225"/>|<img src="/assets/posts/ebc_blog_assets/ibc_coordinate_regression_n_30_seed_0.png" width="300" height="225"/>|<img src="/assets/posts/ebc_blog_assets/rnce_coordinate_regression_n_30_seed_0.png" width="300" height="225"/>|
+
+
+
 ### Push T
+
+<div style="display: flex; justify-content: center;" markdown="1">
+
+|       | MSE | IBC | R-NCE |
+|-------|-----|-----|-------|
+| Score | $0.306 \pm 0.340$ | $0.459 \pm 0.351$ | $\mathbf{0.787 \pm 0.246}$ |
+
+</div>
+
+Score is the mean episode score over 20 random initial conditions x 32 rollouts, where each episode's score is the maximum over time of `s = min(coverage / 0.95, 1)` (coverage = block-goal intersection area / block area).
+
+|            | MSE | IBC | R-NCE |
+|------------|-----|-----|-------|
+| Multimodal |<img src="/assets/posts/ebc_blog_assets/push_t_mse_multimodal.png" width="250" height="250"/>|<img src="/assets/posts/ebc_blog_assets/push_t_ibc_multimodal.png" width="250" height="250"/>|<img src="/assets/posts/ebc_blog_assets/push_t_rnce_multimodal.png" width="250" height="250"/>|
+| Rollout    |<img src="/assets/posts/ebc_blog_assets/push_t_mse.png" width="300" height="78"/>|<img src="/assets/posts/ebc_blog_assets/push_t_ibc.png" width="300" height="78"/>|<img src="/assets/posts/ebc_blog_assets/push_t_rnce.png" width="300" height="78"/>|
 
 $$
 \pi(a \mid s) \propto \exp(-E_\theta(s, a))
