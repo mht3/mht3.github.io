@@ -18,7 +18,7 @@ I've recently started to incorporate energy-based models into my own research fo
 
 Recently, there has been some excitement in industry about energy-based models, backed by researchers like Yann LeCun and companies such as Logical Intelligence with their newest [KONA reasoning model](https://logicalintelligence.com/kona-ebms-energy-based-models). Part of what's appealing is that energy-based models learn a scalar function over candidate solutions, allowing inference to be framed as an optimization problem rather than a purely autoregressive generation process like with large-language models. If we assign low energy to "good" solutions and high energy to "bad" solutions, then finding good solutions boils down to a function minimization problem. 
 
-For robot policies, this means that instead of learning \\(\pi(a|s)\\) to predict actions given states, we learn an energy function \\(E(s, a)\\), and search for \\(a^* = \arg\min_a E(s, a)\\). 
+For robot policies, this means that instead of learning \\(\pi(a \mid s)\\) to predict actions given states, we learn an energy function \\(E(s, a)\\), and search for \\(a^* = \arg\min_a E(s, a)\\). 
 
 In the robotics community, diffusion [[3]](#ref3) and score/Flow matching [[5]](#ref5) models have taken the stage in the robotics community. These models are iterative
 
@@ -26,7 +26,7 @@ In the robotics community, diffusion [[3]](#ref3) and score/Flow matching [[5]](
 
 Here we will focus on behavior cloning settings, i.e. learning a policy from a dataset \\(\mathcal{D}\\) of optimal demonstrations. Along the way I will attempt to answer questions such as: How good are EBMs at modeling multimodal data and how easy is it to train EBMs in higher dimensions? 
 
-Let's start with our simplest baseline: **Vanilla behavior cloning**. Vanilla behavior cloning seeks to minimize the mean square error between an offline dataset of optimal actions, and predicted actions from a learned model. We can define a loss function 
+Let's start with our simplest baseline: **Vanilla behavior cloning**. Vanilla behavior cloning seeks to minimize the mean square error between an offline dataset of optimal actions, and predicted actions from a learned model. We can define a mean-square error objective for the simple vanilla behavior cloning objective. This is extremely simple to implement and with sufficient data can learn reasonable policies.
 
 $$\mathcal{L}_{MSE} = \frac{1}{|\mathcal{D}|}\sum_{i \in \mathcal{D}} \|\hat{a}_i - a^*_i\|_2^2 \tag{1}$$
 
