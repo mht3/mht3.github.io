@@ -18,7 +18,7 @@ I've recently started to incorporate energy-based models into my own research fo
 
 Recently, there has been some excitement in industry about energy-based models, backed by researchers like Yann LeCun and companies such as Logical Intelligence with their newest [KONA reasoning model](https://logicalintelligence.com/kona-ebms-energy-based-models). Part of what's appealing is that energy-based models learn a scalar function over candidate solutions, allowing inference to be framed as an optimization problem rather than a purely autoregressive generation process like with large-language models. If we assign low energy to "good" solutions and high energy to "bad" solutions, then finding good solutions boils down to a function minimization problem. 
 
-For robot policies, this means that instead of learning $$\pi(a|s)$$ to predict actions given states, we learn an energy function $$E(s, a)$$, and search for $$a^* = \arg\min_a E(s, a)$$. 
+For robot policies, this means that instead of learning $\pi(a|s)$ to predict actions given states, we learn an energy function $E(s, a)$, and search for $a^* = \arg\min_a E(s, a)$. 
 
 In the robotics community, Diffusion [[3]](#ref3) and Flow matching [[5]](#ref5) models have taken the stage in the robotics community. These models are iterative
 
