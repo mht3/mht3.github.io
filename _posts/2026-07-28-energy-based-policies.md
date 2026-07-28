@@ -22,9 +22,13 @@ For robot policies, this means that instead of learning $$\pi(a|s)$$ to predict 
 
 In the robotics community, Diffusion [[3]](#ref3) and Flow matching [[5]](#ref5) models have taken the stage in the robotics community. These models are iterative
 
-## Vanilla Behavior Cloning
+## Problem Setting 
 
-Vanilla behavior cloning seeks to minimize the mean square error between an offline dataset of optimal actions, and predicted actions from a learned model
+Here we will focus on behavior cloning settings, i.e. learning a policy from a dataset of optimal demonstrations. Along the way I will attempt to answer questions such as: How good are EBMs at modeling multimodal data and how easy is it to train EBMs in higher dimensions? 
+
+Let's start with our simplest baseline: **Vanilla behavior cloning**. Vanilla behavior cloning seeks to minimize the mean square error between an offline dataset of optimal actions, and predicted actions from a learned model. We can define a loss function 
+
+$$\ell_{MSE} = \sum_{i \in \mathcal{D}} \|\hat{a}_i - a^*_i\|_2^2$$
 
 ## Implicit Behavior Cloning
 
