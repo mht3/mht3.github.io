@@ -14,6 +14,13 @@ noindex:                false
 **Figure 1**: *Visualization of different types of policies. [(source)](https://arxiv.org/abs/2303.04137)*
 </div>
 
+I've recently started to incorporate energy-based models into my own research for learning robot control policies and wanted to share what I've learned so far. Fair warning: this is mainly a page for me to organize my thoughts, but I do hope you find my perspectives and explanations useful!
+
+Recently, there has been some excitement in industry about energy-based models, backed by researchers like Yann Lecun and companies such as [Logical Intelligence](https://logicalintelligence.com/) with their newest KONA reasoning model. Part of what's appealing is that energy-based models learn an energy function over candidate solutions, allowing inference to be framed as an optimization problem rather than a purely autoregressive generation process. If we assign low energy to "good" solutions and high energy to "bad" solutions, then finding good solutions boils down to a function minimization problem. 
+
+For robot policies, this means that instead of learning $$\pi(a|s)$$ to predict actions, we learn an energy function $$E(s, a)$$, and search for $$a^* = \arg\min_a E(s, a)$$.
+
+
 ## Tasks
 
 ### Moons Toy Dataset
@@ -27,13 +34,13 @@ noindex:                false
 <div class="post-figure" markdown="1">
 <img src="/assets/posts/ebp_blog_assets/make_moons_energy_slice.gif" width="600" height="245"/>
 
-**Figure 3**: *Test set action predictions for the moons toy example task. MSE averages both action modes and gives incorrect predictions while energy-based models correctly find multimodal structure in the data.*
+**Figure 3**: *Standard energy based model inference on the moons toy dataset for a held out state of s=0.4. Samples start uniformly over the action space and are iteratively updated with Langevin dynamics.*
 </div>
 
 <div class="post-figure" markdown="1">
 <img src="/assets/posts/ebp_blog_assets/make_moons_rnce_energy_slice.gif" width="600" height="245"/>
 
-**Figure 4**: *Test set action predictions for the moons toy example task. MSE averages both action modes and gives incorrect predictions while energy-based models correctly find multimodal structure in the data.*
+**Figure 4**: *Ranking noise contrastive estimation EBM inference on the moons toy dataset for a for a held out state of s=0.4.  A Gaussian proposal distribution warm-starts the samples and actions are iteratively updated with Langevin dynamics.*
 </div>
 
 ### Coordinate Regression
@@ -82,7 +89,9 @@ Score is the mean episode score over 20 random initial conditions x 32 rollouts,
 
 ## Code
 
-Code for this blog is available here: [github.com/mht3/ebp](https://github.com/mht3/ebp/)
+Code for this blog is available here: [github.com/mht3/ebp](https://github.com/mht3/ebp/).
+
+If you have any questions or comments, feel free to email me at mat028 [at] ucsd [dot] edu.
 
 
 ## References
