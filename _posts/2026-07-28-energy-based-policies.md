@@ -11,7 +11,7 @@ noindex:                false
 <div class="post-figure" markdown="1">
 ![Figure 1: Visualization of different types of policies.](/assets/posts/ebp_blog_assets/ebp_teaser.png)
 
-**Figure 1**: *Visualization of different types of policies. [(source)](https://arxiv.org/abs/2303.04137)*
+**Figure 1**: *Visualization of different types of policies [(source)](https://arxiv.org/abs/2303.04137). (a) explicit policies that learn to predict actions directly from observations. (b) Implicit/energy-based policies where optimal actions lie on areas with lowest energy. (c) Iterative generative models refining data from noise.*
 </div>
 
 I've recently started to incorporate energy-based models into my own research for learning robot control policies and wanted to share what I've learned so far. Fair warning: this is mainly a page for me to organize my thoughts, but I do hope you find my perspectives and explanations useful!
@@ -20,15 +20,17 @@ Recently, there has been some excitement in industry about energy-based models, 
 
 For robot policies, this means that instead of learning $$\pi(a|s)$$ to predict actions given states, we learn an energy function $$E(s, a)$$, and search for $$a^* = \arg\min_a E(s, a)$$. 
 
-In the robotics community, Diffusion [[3]](#ref3) and Flow matching [[5]](#ref5) models have taken the stage in the robotics community, and typical energy models have been nearly forgotten. 
+In the robotics community, Diffusion [[3]](#ref3) and Flow matching [[5]](#ref5) models have taken the stage in the robotics community. These models are iterative
 
 ## Vanilla Behavior Cloning
 
-Vanilla behavior cloning seeks to minimize the mean square error between an offline dataset of optimal actions, and predicted actions from a model
+Vanilla behavior cloning seeks to minimize the mean square error between an offline dataset of optimal actions, and predicted actions from a learned model
 
 ## Implicit Behavior Cloning
 
 ## Ranking-Noise Contrastive Estimation
+
+Ranking-Noise Contrastive Estimation
 
 ## Results!
 
