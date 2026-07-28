@@ -20,9 +20,14 @@ Recently, there has been some excitement in industry about energy-based models, 
 
 For robot policies, this means that instead of learning \\(\pi(a \mid s)\\) to predict actions given states, we learn an energy function \\(E(s, a)\\), and search for \\(a^* = \arg\min_a E(s, a)\\). 
 
-In the robotics community, diffusion [[3]](#ref3) and score/Flow matching [[5]](#ref5) models have taken the stage in the robotics community. These models are iterative
+In the robotics community, diffusion [[3]](#ref3) and score/flow matching [[5]](#ref5) models have taken the stage in the robotics community. These models learn noise from data and iteratively denoise to produce outputs that match the data distribution. EBMs in continuous, high-dimensional spaces have a reputation for being impractical to train because of the intractable partition function. The go-to objective for EBM-based behavior cloning, IBC [[1]](#ref1), only reinforced this despite impressive results in lower dimensions [[3]](#ref3). 
 
-## Problem Setting 
+
+Recently, I stumbled upon a paper while reading related work for my current research project that explained how the IBC objective is ill-posed [[2]](#ref2). The authors proposed a solution and showed that energy-based models can work just as well, if not better than diffusion models in high dimensions. This is my attempt at recreating the work by [[2]](#ref2) and understanding the bare-bones implementation of their ranking noise contrastive estimation loss and learnable proposal distribution. 
+
+Why bother?? This is a question you may have if you are a flow/score matching enthusiast. My main interest in these energy-based models is **composability**. Say we train an energy function that pulls a robot arm toward a target. If an obstacle shows up at test time that wasn't in the training data, we don't need to retrain anything! We can just add a repulsive energy term that grows large near the obstacle, and minimize the summation of both energies instead. In the real world, this could have profound impacts on safety and interpretability compared to traditional AI controllers being used. I am not here to say that flow and score matching models should not be used. We've seen real world robotics problems be solved that we never thought possible with these models! As a researcher, I think it's always good to take a step back and ask why? Why are these models so good? What knowledge can we take from them? 
+
+## Methods
 
 Here we will focus on behavior cloning settings, i.e. learning a policy from a dataset \\(\mathcal{D}\\) of optimal demonstrations. Along the way I will attempt to answer questions such as: How good are EBMs at modeling multimodal data and how easy is it to train EBMs in higher dimensions? 
 
@@ -30,15 +35,15 @@ Let's start with our simplest baseline: **Vanilla behavior cloning**. Vanilla be
 
 $$\mathcal{L}_{MSE} = \frac{1}{|\mathcal{D}|}\sum_{i \in \mathcal{D}} \|\hat{a}_i - a^*_i\|_2^2 \tag{1}$$
 
-## Implicit Behavior Cloning
+#### Implicit Behavior Cloning
 
-## Ranking-Noise Contrastive Estimation
+#### Ranking-Noise Contrastive Estimation
 
 Ranking-Noise Contrastive Estimation
 
 ## Results!
 
-### Moons Toy Dataset
+#### Moons Toy Dataset
 
 <div class="post-figure" markdown="1">
 ![Figure 2: Test set results for the moons toy example task.](/assets/posts/ebp_blog_assets/make_moons.png)
@@ -58,7 +63,7 @@ Ranking-Noise Contrastive Estimation
 **Figure 4**: *Ranking noise contrastive estimation EBM inference on the moons toy dataset for a for a held out state of s=0.4.  A Gaussian proposal distribution warm-starts the samples and actions are iteratively updated with Langevin dynamics.*
 </div>
 
-### Coordinate Regression
+#### Coordinate Regression
 
 <div style="display: flex; justify-content: center;" markdown="1">
 
@@ -75,7 +80,7 @@ Ranking-Noise Contrastive Estimation
 **Figure 5**: *Test set results for the coordinate regression task. Top: Explicit and implicit models trained on 10 images. Bottom: models trained on 30 images. MSE overfits easily with little training data.*
 </div>
 
-### Push-T
+#### Push-T
 
 The final task in this blog is a true sequential control problem where an end-effector must push a T-shaped block into a target (green) position [[3]](#ref3). The goal state stays fixed and the end-effector and T-block have random starting positions. The dataset itself is directly from [[3]](#ref3), and consists of 20 state dimensions: 9 fixed points on the T-block, and the pusher's (x, y) position. The action is the 2D coordinate for where to move the end-effector to. Internally, a PD controller moves from the current position to the next position.
 
@@ -102,6 +107,7 @@ Score is the mean episode score over 20 random initial conditions x 32 rollouts,
 
 **Figure 7**: *MSE, IBC, and R-NCE rollouts from four test set initial states.*
 </div>
+
 
 ## Code
 
