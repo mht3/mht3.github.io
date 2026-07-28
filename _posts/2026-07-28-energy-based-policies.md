@@ -18,8 +18,13 @@ I've recently started to incorporate energy-based models into my own research fo
 
 Recently, there has been some excitement in industry about energy-based models, backed by researchers like Yann Lecun and companies such as [Logical Intelligence](https://logicalintelligence.com/) with their newest KONA reasoning model. Part of what's appealing is that energy-based models learn an energy function over candidate solutions, allowing inference to be framed as an optimization problem rather than a purely autoregressive generation process. If we assign low energy to "good" solutions and high energy to "bad" solutions, then finding good solutions boils down to a function minimization problem. 
 
-For robot policies, this means that instead of learning $$\pi(a|s)$$ to predict actions, we learn an energy function $$E(s, a)$$, and search for $$a^* = \arg\min_a E(s, a)$$.
+For robot policies, this means that instead of learning $\pi(a|s)$ to predict actions given states, we learn an energy function $E(s, a)$, and search for $a^* = \arg\min_a E(s, a)$. 
 
+## Vanilla Behavior Cloning
+
+## Implicit Behavior Cloning
+
+## Ranking-Noise Contrastive Estimation
 
 ## Tasks
 
