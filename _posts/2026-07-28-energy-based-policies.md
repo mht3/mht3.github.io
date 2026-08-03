@@ -8,10 +8,13 @@ noindex:                false
 
 <p class="post-subtitle">{{ page.subtitle }}</p>
 
+**Under Construction**. Don't peek!
 
-I've recently started to incorporate energy-based models into my own research for learning robot control policies and wanted to share what I've learned so far. Fair warning: this is mainly a page for me to organize my thoughts, but I do hope you find my perspectives and explanations useful!
+I've started to incorporate energy-based models into my own research for learning robot control policies and wanted to share what I've learned so far. This blog is intended for other researchers or anyone interested in learning about learning-based policies for robots. I won't go into depth on model architectures, or exact ways of training. Feel free to check my code for that. I do hope you gain a high level understanding of the kinds of robot policies out there, and build a solid intuition for how energy based policies work and why they're useful.
 
 Recently, there has been some excitement in industry about energy-based models, backed by researchers like Yann LeCun and companies such as Logical Intelligence with their newest [KONA reasoning model](https://logicalintelligence.com/kona-ebms-energy-based-models). Part of what's appealing is that energy-based models learn a scalar function over candidate solutions, allowing inference to be framed as an optimization problem rather than a purely autoregressive generation process like with large-language models. If we assign low energy to "good" solutions and high energy to "bad" solutions, then finding good solutions boils down to a function minimization problem. 
+
+A robot control policy is simply a framework for taking actions given states/observations. We usually denote this policy as \\(\pi(a \mid s)\\). A robot can (and probably should) do different things depending on what it observes. Here we will focus on a purely offline imitation learning setting where we assume that optimal demonstrations are given in the form of a dataset. The goal is to "imitate" the actions we see in the data and generalize well to unseen states. 
 
 
 <div class="post-figure" markdown="1">
@@ -21,14 +24,12 @@ Recently, there has been some excitement in industry about energy-based models, 
 </div>
 
 
-For robot policies, this means that instead of learning \\(\pi(a \mid s)\\) to predict actions given states, we learn an energy function \\(E(s, a)\\), and search for \\(a^* = \arg\min_a E(s, a)\\). 
-
-As of this post, diffusion [[3]](#ref3) and score/flow matching [[5]](#ref5) models have taken the stage in the robotics community. These models learn noise from data and iteratively denoise to produce outputs that match the data distribution. EBMs in continuous, high-dimensional spaces have a reputation for being impractical to train. The go-to objective for EBM-based behavior cloning, IBC [[1]](#ref1), only reinforced this despite extremely impressive results in lower dimensions [[3]](#ref3). 
+As of this post, diffusion [[3]](#ref3) and score/flow matching [[5]](#ref5) models have taken the stage in the robotics community as robot control policies. These models learn noise from data and iteratively denoise to produce outputs that match the data distribution. Our focus today is not these models, but instead energy based models, or EBMs (middle of Figure 1). EBMs in continuous, high-dimensional spaces have a reputation for being impractical to train, while Diffusion and flow matching policies have a reputation for being easier to learn high dimensional data such as images. The go-to objective for EBM-based behavior cloning, implicit behavior cloning (IBC) [[1]](#ref1), only reinforced this despite extremely impressive results in lower dimensions [[3]](#ref3). 
 
 
 Recently, I stumbled upon a paper while reading related work for my current research project that explained how the IBC objective is ill-posed [[2]](#ref2). The authors proposed a solution and showed that energy-based models can work just as well, if not better than diffusion models in high dimensions. This is my attempt at recreating the work by [[2]](#ref2) and understanding the bare-bones implementation of their ranking noise contrastive estimation loss and learnable proposal distribution. 
 
-Why bother?? This is a question you may have if you are a flow/score matching enthusiast. My main interest in these energy-based models is **composability**. Say we train an energy function that pulls a robot arm toward a target. If an obstacle shows up at test time that wasn't in the training data, we don't need to retrain anything! We can just add a repulsive energy term that grows large near the obstacle, and minimize the summation of both energies instead. In the real world, this could have profound impacts on safety and interpretability compared to traditional AI controllers being used. I am not here to say that flow and score matching models should not be used. We've seen real world robotics problems be solved that we never thought possible with these models! As a researcher, I think it's always good to take a step back and ask why? Why are these models so good? What knowledge can we take from them? 
+Why bother with EBMs as policies?! This is a question you may have if you are a flow/score matching enthusiast. My main interest in these energy-based models is **composability**. Say we train an energy function that pulls a robot arm toward a target. If an obstacle shows up at test time that wasn't in the training data, we don't need to retrain anything! We can just add a repulsive energy term that grows large near the obstacle, and minimize the summation of both energies instead. In the real world, this could have profound impacts on safety and interpretability compared to traditional AI controllers being used. I am not here to say that flow and score matching models should not be used. We've seen real world robotics problems be solved that we never thought possible with these models! As a researcher, I think it's always good to take a step back and ask why? Why are these models so good? What knowledge can we take from them? 
 
 ## Methods
 
@@ -85,16 +86,15 @@ Ranking-Noise Contrastive Estimation
 
 #### Push-T
 
-The final task in this blog is a true sequential control problem where an end-effector must push a T-shaped block into a target (green) position [[3]](#ref3). The goal state stays fixed and the end-effector and T-block have random starting positions. The dataset itself is directly from [[3]](#ref3), and consists of 20 state dimensions: 9 fixed points on the T-block, and the pusher's (x, y) position. The action is the 2D coordinate for where to move the end-effector to. Internally, a PD controller moves from the current position to the next position.
+The final task in this blog is a true sequential control problem where an end-effector must push a T-shaped block into a target (green) position [[3]](#ref3). The goal state stays fixed and the end-effector and T-block have random starting positions. The dataset itself is directly from [[3]](#ref3), and consists of 20 state dimensions: 9 fixed points on the T-block, and the pusher's (x, y) position. Note that the original Diffusion policy paper also had a Push-T dataset with image observations. I chose to only use the keypoint-states for simplicity with an MLP, so no CNN or transformer backbones are used. The action is the 2D coordinate for where to move the end-effector to. Internally, a PD controller moves from the current position to the next position.
 
-Score is the mean episode score over 20 random initial conditions x 32 rollouts, where each episode's score is the maximum over time of `s = min(coverage / 0.95, 1)` (coverage = block-goal intersection area / block area).
-
+Score is the max target area coverage averaged over 20 random seeds and 32 rollouts, i.e. `s = min(coverage / 0.95, 1)`. On the left hand side of the table below you will see symbols $T_o$, $T_a$, and $T_p$. These are the observation history, action executions, and action predictions. The first row shows scores where we don't action chunk and predict a single action from the current and previous observation. The second, higher performing row, shows action chunking where 8 actions are executed at once, more similar to diffusion policy execution and model-predictive control settings.
 <div style="display: flex; justify-content: center;" markdown="1">
 
 |       | MSE | IBC | R-NCE |
 |-------|-----|-----|-------|
-| Score | $$0.306 \pm 0.340$$ | $$0.459 \pm 0.351$$ | $$\mathbf{0.787 \pm 0.246}$$ |
-
+| Score ($$T_o=2, $T_a=1, T_p=1$$)| $$0.306 \pm 0.026$$ | $$0.459 \pm 0.027$$ | $$\mathbf{0.787 \pm 0.019}$$ |
+| Score (($$T_o=2, $T_a=8, T_p=8$$))| $$0.306 \pm 0.026$$ | $$0.459 \pm 0.027$$ | $$\mathbf{0.787 \pm 0.019}$$ |
 </div>
 
 
