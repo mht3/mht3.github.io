@@ -71,13 +71,10 @@ Ranking-Noise Contrastive Estimation
 
 <div style="display: flex; justify-content: center;" markdown="1">
 
-|                    | MSE | IBC | R-NCE |
-|--------------------|-----|-----|-------|
-| $T_p=1,\ T_a=1$    | $0.246 \pm 0.039$ | $0.570 \pm 0.044$ | $0.643 \pm 0.044$ |
-| $T_p=2,\ T_a=2$    | $0.478 \pm 0.056$ | $0.237 \pm 0.025$ | $\mathbf{0.772 \pm 0.041}$|
-| $T_p=4,\ T_a=4$    | $0.667 \pm 0.052$ | $0.169 \pm 0.024$ | $0.613 \pm 0.049$ |
-| $T_p=16,\ T_a=8$   | $0.632 \pm 0.054$ | $0.149 \pm 0.022$ | $0.530 \pm 0.042$ |
-
+|       | MSE | IBC | R-NCE |
+|-------|-----|-----|-------|
+| N=10 | $$0.368$$ | $$0.994$$ | $$\mathbf{1.0}$$ |
+| N=30 | $$0.858$$ | $$0.986$$ | $$\mathbf{0.994}$$ |
 
 </div>
 
@@ -94,10 +91,12 @@ The final task in this blog is a true sequential control problem where an end-ef
 Score is the max target area coverage averaged over 20 random seeds and 32 rollouts, i.e. `s = min(coverage / 0.95, 1)`. On the left hand side of the table below you will see symbols $T_o$, $T_a$, and $T_p$. These are the observation history, action executions, and action predictions. The first row shows scores where we don't action chunk and predict a single action from the current and previous observation. The second, higher performing row, shows action chunking where 8 actions are executed at once, more similar to diffusion policy execution and model-predictive control settings.
 <div style="display: flex; justify-content: center;" markdown="1">
 
-|       | MSE | IBC | R-NCE |
-|-------|-----|-----|-------|
-| Score ($$T_o=2, $T_a=1, T_p=1$$)| $$0.306 \pm 0.026$$ | $$0.459 \pm 0.027$$ | $$\mathbf{0.787 \pm 0.019}$$ |
-| Score (($$T_o=2, $T_a=8, T_p=8$$))| $$0.306 \pm 0.026$$ | $$0.459 \pm 0.027$$ | $$\mathbf{0.787 \pm 0.019}$$ |
+|                    | MSE | IBC | R-NCE |
+|--------------------|-----|-----|-------|
+| $T_p=1,\ T_a=1$    | $0.246 \pm 0.039$ | $0.570 \pm 0.044$ | $0.643 \pm 0.044$ |
+| $T_p=2,\ T_a=2$    | $0.478 \pm 0.056$ | $0.237 \pm 0.025$ | $\mathbf{0.772 \pm 0.041}$|
+| $T_p=4,\ T_a=4$    | $0.667 \pm 0.052$ | $0.169 \pm 0.024$ | $0.613 \pm 0.049$ |
+| $T_p=16,\ T_a=8$   | $0.632 \pm 0.054$ | $0.149 \pm 0.022$ | $0.530 \pm 0.042$ |
 </div>
 
 
