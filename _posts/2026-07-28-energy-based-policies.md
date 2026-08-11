@@ -54,17 +54,19 @@ Now, you may be wondering, where do we get counterexamples from?? You're asking 
 
 Recently, I stumbled upon a paper that identified a subtle problem with the IBC objective [[2]](#ref2). Vanilla IBC assumes that negative actions are sampled from a uniform distribution. If we instead use a non-uniform proposal distribution \\(q\_\phi(a \mid s)\\), the IBC objective becomes biasedby learning the density ratio \\(p(a \mid s)/q\_\phi(a \mid s)\\) rather than the expert distribution \\(p(a \mid s)\\). This means that simply replacing uniform noise with a more useful proposal can change what the EBM learns.
 
-R-NCE fixes this by explicitly accounting for the probability of sampling each negative action under the proposal distribution. Instead of using \\(-E\_\theta(s,a)\\) as the softmax logit, we use the proposal-corrected logit \\(-E\_\theta(s,a) - \log q\_\phi(a \mid s)\\):
+R-NCE fixes this by explicitly accounting for the probability of sampling each negative action under the proposal distribution. All we're really doing is swapping IBC's logit \\(-E\_\theta(s,a)\\) for the proposal-corrected logit \\(-E\_\theta(s,a) - \log q\_\phi(a \mid s)\\), and reusing the exact same loss form as eq. 2 — just renaming \\(\tilde{p}\_\theta\\) to \\(r\_\theta\\) to reflect the new logit:
 
-$$-\sum_{i=1}^{N} \log \frac{e^{-E_\theta(s_i,a_i^*)}/q_\phi(a_i^*\mid s_i)}{e^{-E_\theta(s_i,a_i^*)}/q_\phi(a_i^*\mid s_i) + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i,\tilde{a}_i^j)}/q_\phi(\tilde{a}_i^j\mid s_i)} \tag{4}$$
+$$\mathcal{L}_{RNCE} = \sum_{i=1}^N -\log r_\theta\left(a_i^* \mid s_i, \{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\right) \tag{4}$$
+
+$$r_\theta\left(a_i^* \mid s_i, \{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\right) = \frac{e^{-E_\theta(s_i, a_i^*)}/q_\phi(a_i^*\mid s_i)}{e^{-E_\theta(s_i, a_i^*)}/q_\phi(a_i^*\mid s_i) + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}/q_\phi(\tilde{a}_i^j\mid s_i)}$$
 
 This correction allows us to use non-uniform proposals without introducing the same population-level bias. More importantly, it means we can learn a proposal distribution that generates harder and more informative counterexamples rather than relying on uniformly sampled actions.
 
-The authors use a learnable proposal \\(q\_\phi(a \mid s)\\), which can be trained with maximum likelihood on the demonstration data:
+The authors use a learnable proposal \\(q\_\phi(a \mid s)\\), which, for example, can be trained with maximum likelihood on the demonstration data:
 
 $$-\sum_{(s_i,a_i^*)\in\mathcal{D}} \log q_\phi(a_i^*\mid s_i) \tag{5}$$
 
-In summary, R-NCE lets us learn better negative samples without changing the distribution that the EBM is trying to model [[2]](#ref2).
+In summary, R-NCE lets us learn better negative samples without changing the distribution that the EBM is trying to model [[2]](#ref2). This is huge! And we will see the differences this can make in higher dimensions with the Push-T task.
 
 ## Result Time!
 
