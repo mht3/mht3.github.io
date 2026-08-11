@@ -44,17 +44,29 @@ $$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N -\log \tilde{p}_\theta\left(a_i^* \mid s_
 
 $$\tilde{p}_\theta\left(a_i^* \mid s_i, \\{\tilde{a}_i^j\\}_{j=1}^{N_{neg}}\right) = \frac{e^{-E_\theta(s_i, a_i^*)}}{e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}}$$
 
-Minimizing the energy for the actions in our dataset maximizes the log likelihood while forcing \\(E\_\theta(s_i, a_i^*) < E\_\theta(s_i, \tilde{a}\_i^j)\\). At inference, once \\(E\_\theta\\) is trained, we recover the action \\(\hat{a} = \arg\min_a E\_\theta(s, a)\\)using a sampling-based optimizer. Often times a gradient based Langevin dynamics sampler is preferred, but there are also many other ways to sample such as gradient-free cross-entropy methods. \\(\eqref{eq:langevin}\\) below shows Langevin sampling.
+Minimizing this loss encourages the demonstrated action to have lower energy than the sampled counterexamples, i.e. \\(E\_\theta(s_i, a_i^*) < E\_\theta(s_i, \tilde{a}\_i^j)\\). At inference, once \\(E\_\theta\\) is trained, we can recover the action \\(\hat{a} = \arg\min_a E\_\theta(s, a)\\) using a sampling-based optimizer. Often times a gradient based Langevin dynamics sampler is preferred, but there are also many other ways to sample such as gradient-free cross-entropy methods. \\(\eqref{eq:langevin}\\) below shows Langevin sampling, which draws samples \\(p(a \mid s) \propto e^{-E\_\theta(s,a)}\\):
 
 $$a_{k+1} = a_k - \frac{\lambda}{2} \nabla_a E_\theta(s, a_k) + \sqrt{\lambda}\, \xi_k, \quad \xi_k \sim \mathcal{N}(0, I) \tag{3}\label{eq:langevin}$$
 
-Now, you may be wondering, where do we get counterexamples from?? You're asking a great question, dear reader! Vanilla IBC assumes that negatives come from a uniform distribution. This simple assumption can work suprisingly well for tasks in low dimensions. Of course, sometimes negatives we sample may be too obvious of negatives or even meaningless when the dimensionality of the action space increases. This is where Ranking-Noise Contrastive Estimation comes into play. 
+Now, you may be wondering, where do we get counterexamples from?? You're asking a great question, dear reader! Vanilla IBC assumes that negatives come from a uniform distribution. This simple assumption can work suprisingly well for tasks in low dimensions. Of course, sometimes negatives we sample may be too easy or even meaningless when the dimensionality of the action space increases. We can change the proposal distribution to be a Gaussian, or even learnable in order to find the "hard" negatives, however the IBC objective becomes biased once we do this. This is where ranking-noise contrastive estimation comes to the rescue. 
 
 #### Ranking-Noise Contrastive Estimation (RNCE)
 
-Recently, I stumbled upon a paper that explained how the IBC objective is ill-posed [[2]](#ref2). Results from IBC can be extremly high variance depending on the counterexamples chosen. In order to stabilize training, the authors propose a correction term in the loss to account for the likelihood that a sample comes from the proposal distribution. In addition, they show that learnable negative proposal distributions can outperform a simple uniform proposal distributions because they can find "hard" negatives that are more semantically meaningful. The authors proposed a solution and showed that energy-based models can work just as well, if not better than diffusion models in high dimensions. This is my attempt at recreating the work by [[2]](#ref2) and understanding the bare-bones implementation of their ranking noise contrastive estimation loss (R-NCE) and learnable proposal distribution. 
+Recently, I stumbled upon a paper that identified a subtle problem with the IBC objective [[2]](#ref2). Vanilla IBC assumes that negative actions are sampled from a uniform distribution. If we instead use a non-uniform proposal distribution \\(q\_\phi(a \mid s)\\), the IBC objective becomes biasedby learning the density ratio \\(p(a \mid s)/q\_\phi(a \mid s)\\) rather than the expert distribution \\(p(a \mid s)\\). This means that simply replacing uniform noise with a more useful proposal can change what the EBM learns.
 
-## Results!
+R-NCE fixes this by explicitly accounting for the probability of sampling each negative action under the proposal distribution. Instead of using \\(-E\_\theta(s,a)\\) as the softmax logit, we use the proposal-corrected logit \\(-E\_\theta(s,a) - \log q\_\phi(a \mid s)\\):
+
+$$-\sum_{i=1}^{N} \log \frac{e^{-E_\theta(s_i,a_i^*)}/q_\phi(a_i^*\mid s_i)}{e^{-E_\theta(s_i,a_i^*)}/q_\phi(a_i^*\mid s_i) + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i,\tilde{a}_i^j)}/q_\phi(\tilde{a}_i^j\mid s_i)} \tag{4}$$
+
+This correction allows us to use non-uniform proposals without introducing the same population-level bias. More importantly, it means we can learn a proposal distribution that generates harder and more informative counterexamples rather than relying on uniformly sampled actions.
+
+The authors use a learnable proposal \\(q\_\phi(a \mid s)\\), which can be trained with maximum likelihood on the demonstration data:
+
+$$-\sum_{(s_i,a_i^*)\in\mathcal{D}} \log q_\phi(a_i^*\mid s_i) \tag{5}$$
+
+In summary, R-NCE lets us learn better negative samples without changing the distribution that the EBM is trying to model [[2]](#ref2).
+
+## Result Time!
 
 We'll go through three simple examples. The first is a synthetic multimodal dataset of 1D states and actions. This is great for visualizing what each method does. The next is coordinate regression, which showcases how EBMs can generalize better with less data compared to a standard MSE loss. Finally, Push-T is our hardest task, where a robot must learn to push blocks into a target given position commands.
 
