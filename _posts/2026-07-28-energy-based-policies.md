@@ -38,9 +38,11 @@ Use your favorite autodifferentiation library and optimizer (e.g. ADAM, SGD) to 
 
 #### Implicit Behavior Cloning (IBC)
 
-Whereas MSE models would be considered "explicit" policies, energy-based models are "implicit". Implicit behavior cloning was one of the first implementations of an energy-based policy[[1]](#ref1). Rather than regressing directly to the optimal action, IBC trains \\(E_\theta\\) with a contrastive, InfoNCE-style loss [[1]](#ref1): for every state-action pair \\((s_i, a_i^*)\\) in the dataset, we sample \\(N_{neg}\\) negative "counter-example" actions \\(\{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\\), and train the model to treat the true action as the lowest-energy option among the batch:
+Whereas MSE models would be considered "explicit" policies, energy-based models are "implicit". Rather than regressing directly to the optimal action, IBC trains \\(E_\theta\\) with a contrastive, InfoNCE-style loss [[1]](#ref1). For every state-action pair \\((s_i, a_i^*)\\) in the dataset, we sample \\(N_{neg}\\) negative "counter-example" actions \\(\\{\tilde{a}_i^j\\}_{j=1}^{N_{neg}}\\), and train the model to treat the true action as the lowest-energy option among the batch:
 
-$$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N -\log \tilde{p}_\theta\left(a_i^* \mid s_i, \{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\right), \quad \tilde{p}_\theta\left(a_i^* \mid s_i, \{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\right) = \frac{e^{-E_\theta(s_i, a_i^*)}}{e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}} \tag{2}$$
+$$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N -\log \tilde{p}_\theta\left(a_i^* \mid s_i, \\{\tilde{a}_i^j\\}_{j=1}^{N_{neg}}\right) \tag{2}$$
+
+$$\tilde{p}_\theta\left(a_i^* \mid s_i, \\{\tilde{a}_i^j\\}_{j=1}^{N_{neg}}\right) = \frac{e^{-E_\theta(s_i, a_i^*)}}{e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}}$$
 
 This is really just cross-entropy over a softmax built from negative energies, which can obscure what's actually being minimized. Expanding the \\(-\log\\) of that fraction makes it explicit:
 
