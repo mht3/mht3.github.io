@@ -151,7 +151,7 @@ Interestingly, IBC begins to degrade as the action horizon increases, while R-NC
 
 ## Final Thoughts
 
-R-NCE does a much better job in higher dimensions than previously thought. I hope you learned a thing or two about EBMs and their difference from explicit policies such as those trained with MSE loss. Let's not write these models off just yet. Yes, diffusion and flow matching are the new "big thing" in robotics, and yes, they have comparable results with R-NCE [[2]](#ref2). As research in the field progresses, I imagine both energy-based policies and diffusion policies will have their own unique use cases. All we can do for now is stay curious and excited about what is to come!!
+I hope you learned a thing or two about EBMs and their difference from explicit policies such as those trained with MSE loss. R-NCE does a much better job in higher dimensions than the standard way of training implicit polices. Let's not write these models off just yet. Yes, diffusion and flow matching are the new "big thing" in robotics, and yes, they have comparable results with R-NCE [[2]](#ref2). As research in the field progresses, I imagine both energy-based policies and diffusion policies will have their own unique use cases. All we can do for now is stay curious and excited about what is to come!!
 
 If you have any questions or comments, feel free to email me at mat028 [at] ucsd [dot] edu.
 
