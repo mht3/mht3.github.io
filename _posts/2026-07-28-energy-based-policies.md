@@ -50,7 +50,7 @@ $$a_{k+1} = a_k - \frac{\lambda}{2} \nabla_a E_\theta(s, a_k) + \sqrt{\lambda}\,
 
 Now, you may be wondering, where do we get counterexamples from?? You're asking a great question, dear reader! Vanilla IBC assumes that negatives come from a uniform distribution. This simple assumption can work suprisingly well for tasks in low dimensions. Of course, sometimes negatives we sample may be too easy or even meaningless when the dimensionality of the action space increases. We can change the proposal distribution to be a Gaussian, or even learnable in order to find the "hard" negatives, however the IBC objective becomes biased once we do this. This is where ranking-noise contrastive estimation comes to the rescue. 
 
-#### Ranking-Noise Contrastive Estimation (RNCE)
+#### Ranking-Noise Contrastive Estimation (R-NCE)
 
 Recently, I stumbled upon a paper that identified a subtle problem with the IBC objective [[2]](#ref2). Vanilla IBC assumes that negative actions are sampled from a uniform distribution. If we instead use a non-uniform proposal distribution \\(q\_\phi(a \mid s)\\), the IBC objective becomes biasedby learning the density ratio \\(p(a \mid s)/q\_\phi(a \mid s)\\) rather than the expert distribution \\(p(a \mid s)\\). This means that simply replacing uniform noise with a more useful proposal can change what the EBM learns.
 
