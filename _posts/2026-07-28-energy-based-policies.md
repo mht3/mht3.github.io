@@ -8,13 +8,11 @@ noindex:                false
 
 <p class="post-subtitle">{{ page.subtitle }}</p>
 
-**Under Construction**. Don't peek!
-
-I've started to incorporate energy-based models into my own research for learning robot control policies and wanted to share what I've learned so far. This blog is intended for other researchers or anyone interested in learning about learning-based policies for robots. I won't go into depth on model architectures, or exact ways of training. Feel free to check my code for that. I do hope you gain a high level understanding of the kinds of robot policies out there, and build a solid intuition for how energy based policies work and why they're useful.
+I've started to incorporate energy-based models into my own research for learning robot control policies and wanted to share what I've learned so far. This blog is intended for other researchers or anyone interested in learning about learning-based policies for robots. I won't go into depth on model architectures, or exact ways of training. Feel free to check my code for that. I also won't be implementing flow and diffusion models here, but feel free to check the papers attached and [this website](https://diffusion.csail.mit.edu/2026/index.html) for resources. I do hope you gain a high level understanding of the kinds of robot policies out there, and build a solid intuition for how energy based policies work and why they're useful.
 
 Recently, there has been some excitement in industry about energy-based models, backed by researchers like Yann LeCun and companies such as Logical Intelligence with their newest [KONA reasoning model](https://logicalintelligence.com/kona-ebms-energy-based-models). Part of what's appealing is that energy-based models learn a scalar function over candidate solutions, allowing inference to be framed as an optimization problem rather than a purely autoregressive generation process like with large-language models. If we assign low energy to "good" solutions and high energy to "bad" solutions, then finding good solutions boils down to a function minimization problem. 
 
-A robot control policy is simply a framework for taking actions given states/observations. We usually denote this policy as \\(\pi(a \mid s)\\). A robot can (and probably should) do different things depending on what it observes. Here we will focus on a purely offline imitation learning setting where we assume that optimal demonstrations are given in the form of a dataset. The goal is to "imitate" the actions we see in the data and generalize well to unseen states. 
+A robot control policy is simply a framework for taking actions given states/observations. We usually denote this policy as \\(\pi(a \mid s)\\). Here we will focus on a purely offline imitation learning setting where we assume that optimal demonstrations are given in the form of a dataset. The goal is to "imitate" the actions we see in the data while also generalizing well to unseen states. 
 
 
 <div class="post-figure" markdown="1">
@@ -24,10 +22,7 @@ A robot control policy is simply a framework for taking actions given states/obs
 </div>
 
 
-As of this post, diffusion [[3]](#ref3) and score/flow matching [[5]](#ref5) models have taken the stage in the robotics community as robot control policies. These models learn noise from data and iteratively denoise to produce outputs that match the data distribution. Our focus today is not these models, but instead energy based models, or EBMs (middle of Figure 1). Instead of learning a policy directly, EBMs learn an energy function \\(E(s, a)\\) representing the state and energy landscape where our solution space is low energy by construction. Actions can be found at inference time by solving \\(a^* = \arg\min_a E(s, a)\\). EBMs in continuous, high-dimensional spaces have a reputation for being impractical to train, while diffusion and flow matching policies have a reputation for being easier to learn high dimensional data patterns (e.g. image generation). The go-to objective for EBM-based behavior cloning, implicit behavior cloning (IBC) [[1]](#ref1), only reinforces this negative reputation despite extremely impressive results in lower dimensions [[3]](#ref3). 
-
-
-Recently, I stumbled upon a paper that explained how the IBC objective is ill-posed [[2]](#ref2). The authors proposed a solution and showed that energy-based models can work just as well, if not better than diffusion models in high dimensions. This is my attempt at recreating the work by [[2]](#ref2) and understanding the bare-bones implementation of their ranking noise contrastive estimation loss (R-NCE) and learnable proposal distribution. Don't worry, I'll explain these in the next section!
+As of this post, diffusion [[6], [3]](#ref3) and score/flow matching [[5]](#ref5) models have taken the stage in the robotics community as robot control policies. These models learn noise from data and iteratively denoise to produce outputs that match the data distribution. Our focus today is not these models, but instead energy based models, or EBMs (middle of Figure 1). Instead of learning a policy directly, EBMs learn an energy function \\(E(s, a)\\) representing the state and energy landscape where our solution space is low energy by construction. Actions can be found at inference time by solving \\(a^* = \arg\min_a E(s, a)\\). EBMs in continuous, high-dimensional spaces have a reputation for being impractical to train, while diffusion and flow matching policies have a reputation for being easier to learn high dimensional data patterns (e.g. image generation). The go-to objective for EBM-based behavior cloning, implicit behavior cloning (IBC) [[1]](#ref1), only reinforces this negative reputation despite extremely impressive results in lower dimensions [[3]](#ref3). 
 
 First, let me ask you: why bother with EBMs as policies?! We've seen diffusion and flow matching do extremely well in the robotics field. My main interest in these energy-based models is **composability**. Say we train an energy function that pulls a robot arm toward a target. If an obstacle shows up at test time that wasn't in the training data, we don't need to retrain anything! We can just add a repulsive energy term that grows large near the obstacle, and minimize the summation of both energies instead. In the real world, this could have profound impacts on safety and interpretability compared to traditional AI controllers being used. I am not here to say that flow and score matching models should not be used. We've seen real world robotics problems be solved that we never thought possible with these models! As a researcher, I think it's always good to take a step back and ask why? Why are these models so good? What knowledge can we take from them? And maybe most importantly, what is there to gain from trying something different? In my opinion, composability is justification enough to dive deeper.
 
@@ -41,11 +36,21 @@ $$\mathcal{L}_{MSE} = \frac{1}{|\mathcal{D}|}\sum_{i \in \mathcal{D}} \|\hat{a}_
 
 Use your favorite autodifferentiation library and optimizer (e.g. ADAM, SGD) to minimize the MSE. At the end of training, we are given a deterministic policy \\(\pi(a \mid s)\\) that can predict reasonable actions depending on the task and model capacity. Overfitting to the training data can be common, and often times a regularizer is used to penalize large model weights. 
 
-#### Implicit Behavior Cloning
+#### Implicit Behavior Cloning (IBC)
 
-#### Ranking-Noise Contrastive Estimation
+Whereas MSE models would be considered "explicit" policies, energy-based models are "implicit". Implicit behavior cloning was one of the first implementations of an energy-based policy[[1]](#ref1). Rather than regressing directly to the optimal action, IBC trains \\(E_\theta\\) with a contrastive, InfoNCE-style loss [[1]](#ref1): for every state-action pair \\((s_i, a_i^*)\\) in the dataset, we sample \\(N_{neg}\\) negative "counter-example" actions \\(\{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\\), and train the model to treat the true action as the lowest-energy option among the batch:
 
-Ranking-Noise Contrastive Estimation
+$$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N -\log \tilde{p}_\theta\left(a_i^* \mid s_i, \{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\right), \quad \tilde{p}_\theta\left(a_i^* \mid s_i, \{\tilde{a}_i^j\}_{j=1}^{N_{neg}}\right) = \frac{e^{-E_\theta(s_i, a_i^*)}}{e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}} \tag{2}$$
+
+This is really just cross-entropy over a softmax built from negative energies, which can obscure what's actually being minimized. Expanding the \\(-\log\\) of that fraction makes it explicit:
+
+$$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N \left[E_\theta(s_i, a_i^*) + \log\left(e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}\right)\right] \tag{2'}$$
+
+Now it's plain minimization all the way through, no maximizing anything: the first term directly pushes the true action's energy \\(E_\theta(s_i, a_i^*)\\) down (the "positive" landscape we've been minimizing this whole post), while the log-sum-exp term pushes \\(-E_\theta(s_i, \tilde{a}_i^j)\\) down for every negative sample — a "negative" landscape — which is equivalent to driving the negatives' raw energy up. At inference, once \\(E_\theta\\) is trained, we recover the action the same way as before: \\(\hat{a} = \arg\min_a E_\theta(s, a)\\), typically solved with a sampling-based optimizer (derivative-free coordinate descent) or Langevin dynamics, since \\(E_\theta\\) has no closed-form minimum.
+
+#### Ranking-Noise Contrastive Estimation (RNCE)
+
+ Recently, I stumbled upon a paper that explained how the IBC objective is ill-posed [[2]](#ref2). The authors proposed a solution and showed that energy-based models can work just as well, if not better than diffusion models in high dimensions. This is my attempt at recreating the work by [[2]](#ref2) and understanding the bare-bones implementation of their ranking noise contrastive estimation loss (R-NCE) and learnable proposal distribution. Don't worry, I'll explain these in the next section!
 
 ## Results!
 
@@ -126,8 +131,9 @@ If you have any questions or comments, feel free to email me at mat028 [at] ucsd
 
 ## References
 
-1. <a id="ref1"></a>Pete Florence, Corey Lynch, Andy Zeng, Oscar Ramirez, Ayzaan Wahid, Laura Downs, Adrian Wong, Johnny Lee, Igor Mordatch, and Jonathan Tompson. "Implicit Behavioral Cloning." arXiv:2109.00137, 2021. [[arXiv]](https://arxiv.org/abs/2109.00137)
-2. <a id="ref2"></a>Sumeet Singh, Stephen Tu, and Vikas Sindhwani. "Revisiting Energy Based Models as Policies: Ranking Noise Contrastive Estimation and Interpolating Energy Models." arXiv:2309.05803, 2023. [[arXiv]](https://arxiv.org/abs/2309.05803)
-3. <a id="ref3"></a>Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burchfiel, Russ Tedrake, and Shuran Song. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion." arXiv:2303.04137, 2024. [[arXiv]](https://arxiv.org/abs/2303.04137)
+1. <a id="ref1"></a>Pete Florence, Corey Lynch, Andy Zeng, Oscar Ramirez, Ayzaan Wahid, Laura Downs, Adrian Wong, Johnny Lee, Igor Mordatch, and Jonathan Tompson. "Implicit Behavioral Cloning." *arXiv:2109.00137*, 2021. [[arXiv]](https://arxiv.org/abs/2109.00137)
+2. <a id="ref2"></a>Sumeet Singh, Stephen Tu, and Vikas Sindhwani. "Revisiting Energy Based Models as Policies: Ranking Noise Contrastive Estimation and Interpolating Energy Models." *arXiv:2309.05803*, 2023. [[arXiv]](https://arxiv.org/abs/2309.05803)
+3. <a id="ref3"></a>Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burchfiel, Russ Tedrake, and Shuran Song. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion." *arXiv:2303.04137*, 2024. [[arXiv]](https://arxiv.org/abs/2303.04137)
 4. <a id="ref4"></a>Kevin Zakka. "A PyTorch Implementation of Implicit Behavioral Cloning." Version 0.0.1, 2021. [[GitHub]](https://github.com/kevinzakka/ibc)
 5. <a id="ref5"></a>Yaron Lipman, Ricky T. Q. Chen, Heli Ben-Hamu, Maximilian Nickel, and Matt Le. "Flow Matching for Generative Modeling." *arXiv:2210.02747*, 2023. [[arXiv]](https://arxiv.org/abs/2210.02747)
+6. <a id="ref6"></a>Jonathan Ho, Ajay Jain, and Pieter Abbeel. "Denoising Diffusion Probabilistic Models." *arXiv:2006.11239*, 2020. [[arXiv]](https://arxiv.org/abs/2006.11239)
