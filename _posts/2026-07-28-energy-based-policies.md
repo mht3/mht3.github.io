@@ -136,7 +136,7 @@ Score is the max target area coverage averaged over 256 different initial condit
 
 
 <div class="post-figure" markdown="1">
-![Figure 6: MSE, IBC, and R-NCE rollouts for a fixed initial state. Interestingly, energy-based models don't use the full multimodal action landscape.](/assets/posts/ebp_blog_assets/push_t_multimodal.png)
+![Figure 6: MSE, IBC, and R-NCE rollouts for a fixed initial state. EBMs can produce varying action sequences that reach the goal state.](/assets/posts/ebp_blog_assets/push_t_multimodal.png)
 
 **Figure 6**: *MSE, IBC, and R-NCE rollouts for a fixed initial state. Interestingly, energy-based models don't use the full multimodal action landscape.*
 </div>
