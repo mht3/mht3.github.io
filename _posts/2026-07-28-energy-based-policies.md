@@ -44,11 +44,7 @@ $$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N -\log \tilde{p}_\theta\left(a_i^* \mid s_
 
 $$\tilde{p}_\theta\left(a_i^* \mid s_i, \\{\tilde{a}_i^j\\}_{j=1}^{N_{neg}}\right) = \frac{e^{-E_\theta(s_i, a_i^*)}}{e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}}$$
 
-This is really just cross-entropy over a softmax built from negative energies. Expanding the \\(-\log\\) of that fraction gives:
-
-$$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N \left[E_\theta(s_i, a_i^*) + \log\left(e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}\right)\right] \tag{2'}$$
-
-The first term directly pushes the true action's energy \\(E\_\theta(s_i, a_i^*)\\) down, while the log term term pushes \\(E\_\theta(s_i, \tilde{a}\_i^j)\\) up for every negative sample. At inference, once \\(E\_\theta\\) is trained, we recover the action \\(\hat{a} = \arg\min_a E\_\theta(s, a)\\)using a sampling-based optimizer. Often times a gradient based Langevin dynamics sampler is preferred, but there are also many other ways to sample such as gradient-free cross-entropy methods. \\(\eqref{eq:langevin}\\) below shows Langevin sampling.
+Minimizing the energy for the actions in our dataset maximizes the log likelihood while forcing \\(E\_\theta(s_i, a_i^*) < E\_\theta(s_i, \tilde{a}\_i^j)\\). At inference, once \\(E\_\theta\\) is trained, we recover the action \\(\hat{a} = \arg\min_a E\_\theta(s, a)\\)using a sampling-based optimizer. Often times a gradient based Langevin dynamics sampler is preferred, but there are also many other ways to sample such as gradient-free cross-entropy methods. \\(\eqref{eq:langevin}\\) below shows Langevin sampling.
 
 $$a_{k+1} = a_k - \frac{\lambda}{2} \nabla_a E_\theta(s, a_k) + \sqrt{\lambda}\, \xi_k, \quad \xi_k \sim \mathcal{N}(0, I) \tag{3}\label{eq:langevin}$$
 
