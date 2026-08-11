@@ -74,6 +74,8 @@ We'll go through three simple examples. The first is a synthetic multimodal data
 
 #### Moons Toy Dataset
 
+In this example, I made the X-axis represents states and the Y-axis represent actions. You can see that MSE fails miserably on this task becasue it can't handle multimodal data and averages both modes. 
+
 <div class="post-figure" markdown="1">
 ![Figure 2: Test set results for the moons toy example task.](/assets/posts/ebp_blog_assets/make_moons.png)
 
@@ -82,6 +84,8 @@ We'll go through three simple examples. The first is a synthetic multimodal data
 
 <div class="post-figure" markdown="1">
 <img src="/assets/posts/ebp_blog_assets/make_moons_energy_slice.gif" width="600" height="245"/>
+
+Both EBMs can represent the data and I'll show you why. Take a look at Figures 3 and 4. These gifs show the final learned energy landscape. Notice the 2 minimums and how the data points iteratively update towards those minimums! Figure 3 uses a uniform proposal distribution and Figure 4 uses the R-NCE objective with a Gaussian proposal policy. In this simple example, both EBMs learn similar energy landscapes, and in fact, a learnable proposal is probably not needed. Notice the dotted purple line in Figure 4? That is the learned proposal mean, and you can see that it is averaging both modes similar to the MSE model we trained. For more complicated tasks, we may want to move away from a simple Unimodal gaussian policy.
 
 **Figure 3**: *Standard energy based model inference on the moons toy dataset for a held out state of s=0.4. Samples start uniformly over the action space and are iteratively updated with Langevin dynamics.*
 </div>
@@ -93,6 +97,8 @@ We'll go through three simple examples. The first is a synthetic multimodal data
 </div>
 
 #### Coordinate Regression
+
+Coordinate regression is a toy vision task introduced in the IBC paper [[1]](#ref1): given an image containing a small, few-pixel green dot, the goal is to regress its \\((u, v)\\) pixel coordinates. Unlike the rest of this post, this task isn't about multimodality because there's only one correct coordinate per image. It's more about showing spatial generalization with very little data. the IBC authors found that with only 10 training images, an MSE-trained model struggles to even interpolate within the convex hull of the training points, let alone extrapolate outside it. An EBM trained on the exact same handful of images generalizes far better, reporting 1-2 orders of magnitude lower test-set error in this low-data regime. Below I reproduce their setup with \\(N=10\\) and \\(N=30\\) training images and show that that gap holds true.
 
 <div style="display: flex; justify-content: center;" markdown="1">
 
@@ -108,6 +114,8 @@ We'll go through three simple examples. The first is a synthetic multimodal data
 
 **Figure 5**: *Test set results for the coordinate regression task. Top: Explicit and implicit models trained on 10 images. Bottom: models trained on 30 images. MSE overfits easily with little training data.*
 </div>
+
+Why do these EBMs generalize better with less data? I would encourage you to read the attached paper more, however, at a high level, the key difference is the implicit function class itself. An explicit MSE model directly represents the mapping \\(y=f\_\theta(s)\\). Models with ReLU activations learn a piecewise-linear function whose output is constrained directly by the training examples. With only a few examples, this can lead to poor extrapolation. An EBM instead represents a continuous energy function \\(E\_\theta(s,a)\\) and obtains its prediction through \\(\arg\min_a E\_\theta(s,a)\\). The IBC authors show that a continuous mapping is forced to pass through every value between two training points. An implicit Even though \\(E\_\theta\\) itself is continuous, the \\(\arg\min\\) used to extract a prediction can jump between disconnected low-energy regions, letting it represent sharp discontinuities directly [[1]](#ref1). This carries over to extrapolation because outside the training data, an implicit model's prediction tends to continue along whichever piecewise-linear segment of \\(E\_\theta\\) was active nearest the edge of the training domain, rather than extrapolating the output mapping directly.
 
 #### Push-T
 
