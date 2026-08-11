@@ -38,7 +38,7 @@ Use your favorite autodifferentiation library and optimizer (e.g. ADAM, SGD) to 
 
 #### Implicit Behavior Cloning (IBC)
 
-Whereas MSE models would be considered "explicit" policies, energy-based models are "implicit". Rather than regressing directly to the optimal action, IBC trains \\(E_\theta\\) with a contrastive, InfoNCE-style loss [[1]](#ref1). For every state-action pair \\((s_i, a_i^*)\\) in the dataset, we sample \\(N_{neg}\\) negative "counter-example" actions \\(\\{\tilde{a}_i^j\\}_{j=1}^{N_{neg}}\\), and train the model to treat the true action as the lowest-energy option among the batch:
+Whereas MSE models would be considered "explicit" policies, energy-based models are "implicit". Rather than regressing directly to the optimal action, IBC trains \\(E\_\theta\\) with a contrastive, InfoNCE-style loss [[1]](#ref1). For every state-action pair \\((s_i, a_i^*)\\) in the dataset, we sample \\(N\_{neg}\\) negative "counter-example" actions \\(\\{\tilde{a}\_i^j\\}\_{j=1}^{N\_{neg}}\\), and train the model to treat the true action as the lowest-energy option among the batch:
 
 $$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N -\log \tilde{p}_\theta\left(a_i^* \mid s_i, \\{\tilde{a}_i^j\\}_{j=1}^{N_{neg}}\right) \tag{2}$$
 
@@ -48,15 +48,19 @@ This is really just cross-entropy over a softmax built from negative energies. E
 
 $$\mathcal{L}_{InfoNCE} = \sum_{i=1}^N \left[E_\theta(s_i, a_i^*) + \log\left(e^{-E_\theta(s_i, a_i^*)} + \sum_{j=1}^{N_{neg}} e^{-E_\theta(s_i, \tilde{a}_i^j)}\right)\right] \tag{2'}$$
 
-The first term directly pushes the true action's energy \\(E_\theta(s_i, a_i^*)\\) down, while the log term term pushes \\(E_\theta(s_i, \tilde{a}_i^j)\\) up for every negative sample. At inference, once \\(E_\theta\\) is trained, we recover the action \\(\hat{a} = \arg\min_a E_\theta(s, a)\\)using a sampling-based optimizer. Often times a gradient based Langevin dynamics sampler is preferred, but there are also many other ways to sample such as gradient-free cross-entropy methods. \\(\eqref{eq:langevin}\\) below shows Langevin sampling.
+The first term directly pushes the true action's energy \\(E\_\theta(s_i, a_i^*)\\) down, while the log term term pushes \\(E\_\theta(s_i, \tilde{a}\_i^j)\\) up for every negative sample. At inference, once \\(E\_\theta\\) is trained, we recover the action \\(\hat{a} = \arg\min_a E\_\theta(s, a)\\)using a sampling-based optimizer. Often times a gradient based Langevin dynamics sampler is preferred, but there are also many other ways to sample such as gradient-free cross-entropy methods. \\(\eqref{eq:langevin}\\) below shows Langevin sampling.
 
 $$a_{k+1} = a_k - \frac{\lambda}{2} \nabla_a E_\theta(s, a_k) + \sqrt{\lambda}\, \xi_k, \quad \xi_k \sim \mathcal{N}(0, I) \tag{3}\label{eq:langevin}$$
 
+Now, you may be wondering, where do we get counterexamples from?? You're asking a great question, dear reader! Vanilla IBC assumes that negatives come from a uniform distribution. This simple assumption can work suprisingly well for tasks in low dimensions. Of course, sometimes negatives we sample may be too obvious of negatives or even meaningless when the dimensionality of the action space increases. This is where Ranking-Noise Contrastive Estimation comes into play. 
+
 #### Ranking-Noise Contrastive Estimation (RNCE)
 
-Recently, I stumbled upon a paper that explained how the IBC objective is ill-posed [[2]](#ref2). The authors proposed a solution and showed that energy-based models can work just as well, if not better than diffusion models in high dimensions. This is my attempt at recreating the work by [[2]](#ref2) and understanding the bare-bones implementation of their ranking noise contrastive estimation loss (R-NCE) and learnable proposal distribution. 
+Recently, I stumbled upon a paper that explained how the IBC objective is ill-posed [[2]](#ref2). Results from IBC can be extremly high variance depending on the counterexamples chosen. In order to stabilize training, the authors propose a correction term in the loss to account for the likelihood that a sample comes from the proposal distribution. In addition, they show that learnable negative proposal distributions can outperform a simple uniform proposal distributions because they can find "hard" negatives that are more semantically meaningful. The authors proposed a solution and showed that energy-based models can work just as well, if not better than diffusion models in high dimensions. This is my attempt at recreating the work by [[2]](#ref2) and understanding the bare-bones implementation of their ranking noise contrastive estimation loss (R-NCE) and learnable proposal distribution. 
 
 ## Results!
+
+We'll go through three simple examples. The first is a synthetic multimodal dataset of 1D states and actions. This is great for visualizing what each method does. The next is coordinate regression, which showcases how EBMs can generalize better with less data compared to a standard MSE loss. Finally, Push-T is our hardest task, where a robot must learn to push blocks into a target given position commands.
 
 #### Moons Toy Dataset
 
