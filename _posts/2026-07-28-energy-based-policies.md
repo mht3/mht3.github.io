@@ -64,7 +64,7 @@ This correction allows us to use non-uniform proposals without introducing the s
 
 The authors use a learnable proposal \\(q\_\phi(a \mid s)\\), which, for example, can be trained with maximum likelihood on the demonstration data:
 
-$$-\sum_{(s_i,a_i^*)\in\mathcal{D}} \log q_\phi(a_i^*\mid s_i) \tag{5}$$
+$$\mathcal{L}_\phi = -\sum_{(s_i,a_i^*)\in\mathcal{D}} \log q_\phi(a_i^*\mid s_i) \tag{5}$$
 
 In summary, R-NCE lets us learn better negative samples without changing the distribution that the EBM is trying to model [[2]](#ref2). This is huge! And we will see the differences this can make in higher dimensions with the Push-T task.
 
